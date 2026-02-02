@@ -48,14 +48,15 @@
               "raw": "{\n    \"nome\": \"Lucas Almeida Silva\", \n    \"dataNascimento\": \"1994-11-11\", \n    \"sexo\": \"M\", \n    \"email\": \"lucas@mail.com\"\n}"
             },
             "url": {
-              "raw": "http://localhost:8080/usuarios",
+              "raw": "http://localhost:8080/usuarios/{{usuarioId}}",
               "protocol": "http",
               "host": [
                 "localhost"
               ],
               "port": "8080",
               "path": [
-                "usuarios"
+                "usuarios",
+                "{{usuarioId}}"
               ]
             }
           },
