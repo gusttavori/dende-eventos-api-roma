@@ -1,6 +1,7 @@
 package br.com.softhouse.dende;
 
 import br.com.dende.softhouse.process.WebApplication;
+import br.com.softhouse.dende.model.Usuario;
 
 import java.io.IOException;
 
@@ -16,5 +17,7 @@ public class DendeEventosApplication {
                 });
         webApplication.run();
 
+
+        System.out.println();
     }
 }

@@ -3,7 +3,8 @@ package br.com.softhouse.dende.model;
 import java.time.LocalDate;
 import java.util.Objects;
 
-public class Usuario {
+// Decidi deixar a classe abstract para não ser instânciada diretamente
+public abstract class Usuario {
 
     private String nome;
     private LocalDate dataNascimento;
