@@ -1,30 +1,57 @@
 package br.com.softhouse.dende.model;
 
+
 import java.time.LocalDate;
 import java.util.Objects;
-
-// Decidi deixar a classe abstract para não ser instânciada diretamente
-public abstract class Usuario {
-
+// Atributos id, senha e statusUsuario adicionados
+public class Usuario {
+    private Long id;
     private String nome;
     private LocalDate dataNascimento;
     private String sexo;
     private String email;
+    private String senha;
+    private boolean statusUsuario;
 
-    public Usuario(
-            final String nome,
-            final LocalDate dataNascimento,
-            final String sexo,
-            final String email
-    ) {
+    public Usuario(Long id, String nome, LocalDate dataNascimento, String sexo, String email, String senha, boolean statusUsuario) {
+        this.id = id;
         this.nome = nome;
         this.dataNascimento = dataNascimento;
         this.sexo = sexo;
         this.email = email;
+        this.senha = senha;
+        this.statusUsuario = statusUsuario;
     }
 
     public Usuario() {
 
+    }
+
+    public boolean isStatusUsuario() {
+        return statusUsuario;
+    }
+
+    public void setStatusUsuario(boolean statusUsuario) {
+        this.statusUsuario = statusUsuario;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getSenha() {
+        return senha;
+    }
+
+    public void setSenha(String senha) {
+        this.senha = senha;
+    }
+
+    public Usuario(String nome, LocalDate dataNascimento, String sexo, String email, String senha) {
     }
 
     public String getNome() {
@@ -60,16 +87,16 @@ public abstract class Usuario {
     }
 
     @Override
-    public boolean equals(Object object) {
-        if (this == object) return true;
-        if (object == null || getClass() != object.getClass()) return false;
-        Usuario usuario = (Usuario) object;
-        return Objects.equals(nome, usuario.nome) && Objects.equals(dataNascimento, usuario.dataNascimento) && Objects.equals(sexo, usuario.sexo) && Objects.equals(email, usuario.email);
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Usuario usuario = (Usuario) o;
+        return Objects.equals(id, usuario.id) && Objects.equals(nome, usuario.nome) && Objects.equals(dataNascimento, usuario.dataNascimento) && Objects.equals(sexo, usuario.sexo) && Objects.equals(email, usuario.email) && Objects.equals(senha, usuario.senha);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(nome, dataNascimento, sexo, email);
+        return Objects.hash(id, nome, dataNascimento, sexo, email, senha);
     }
 
     @Override
