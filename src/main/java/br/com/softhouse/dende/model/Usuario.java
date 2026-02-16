@@ -2,56 +2,35 @@ package br.com.softhouse.dende.model;
 
 
 import java.time.LocalDate;
+import java.time.Period;
 import java.util.Objects;
+
 // Atributos id, senha e statusUsuario adicionados
-public class Usuario {
-    private Long id;
+// Set de email e id removidos para não poder alterar
+public abstract class Usuario {
+    private Integer id;
     private String nome;
     private LocalDate dataNascimento;
     private String sexo;
     private String email;
     private String senha;
-    private boolean statusUsuario;
+    boolean statusUsuario = true;
 
-    public Usuario(Long id, String nome, LocalDate dataNascimento, String sexo, String email, String senha, boolean statusUsuario) {
+
+    public Usuario(Integer id, String nome, LocalDate dataNascimento, String sexo, String email, String senha) {
         this.id = id;
         this.nome = nome;
         this.dataNascimento = dataNascimento;
         this.sexo = sexo;
         this.email = email;
         this.senha = senha;
-        this.statusUsuario = statusUsuario;
     }
 
     public Usuario() {
-
     }
 
-    public boolean isStatusUsuario() {
-        return statusUsuario;
-    }
-
-    public void setStatusUsuario(boolean statusUsuario) {
-        this.statusUsuario = statusUsuario;
-    }
-
-    public Long getId() {
+    public Integer getId() {
         return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getSenha() {
-        return senha;
-    }
-
-    public void setSenha(String senha) {
-        this.senha = senha;
-    }
-
-    public Usuario(String nome, LocalDate dataNascimento, String sexo, String email, String senha) {
     }
 
     public String getNome() {
@@ -62,9 +41,6 @@ public class Usuario {
         this.nome = nome;
     }
 
-    public LocalDate getDataNascimento() {
-        return dataNascimento;
-    }
 
     public void setDataNascimento(LocalDate dataNascimento) {
         this.dataNascimento = dataNascimento;
@@ -82,8 +58,16 @@ public class Usuario {
         return email;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    public String getSenha() {
+        return senha;
+    }
+
+    public void setSenha(String senha) {
+        this.senha = senha;
+    }
+
+    public Boolean getStatusUsuario() {
+        return statusUsuario;
     }
 
     @Override
@@ -91,21 +75,34 @@ public class Usuario {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Usuario usuario = (Usuario) o;
-        return Objects.equals(id, usuario.id) && Objects.equals(nome, usuario.nome) && Objects.equals(dataNascimento, usuario.dataNascimento) && Objects.equals(sexo, usuario.sexo) && Objects.equals(email, usuario.email) && Objects.equals(senha, usuario.senha);
+        return Objects.equals(id, usuario.id) && Objects.equals(email, usuario.email);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, nome, dataNascimento, sexo, email, senha);
+        return Objects.hash(id, email);
     }
 
     @Override
     public String toString() {
-        return "Usuario{" +
-                "nome='" + nome + '\'' +
-                ", dataNascimento=" + dataNascimento +
-                ", sexo='" + sexo + '\'' +
-                ", email='" + email + '\'' +
-                '}';
+        return
+                "\nNome: " + nome +
+                "\nEmail: " + email +
+                "\nSexo: " + sexo +
+                "\nData de nascimento: " + dataNascimento + " (" + this.getIdade()+ ")";
     }
+
+
+    // Foi removida o getIdade e adicionada uma função que pega a data atual e faz p calculo de acordo com a data do usuário
+    public String getIdade (){
+        if(this.dataNascimento != null){ // Se diferente de null
+            LocalDate dataAtual = LocalDate.now(); // Pega a data atual (hoje)
+            Period anosIdade = Period.between(dataNascimento, dataAtual); // O "Period" representa uma quantidade de tempo baseada em calendário. o between calcula a diferença de duas datas
+            return anosIdade.getYears() + " anos"; // Como queremos saber somente a idade, pegamos apenas os Years
+        }else {
+            return "Idade não cadastrada corretamente! Verifique novamente sua informações!";
+        }
+    }
+
+
 }
