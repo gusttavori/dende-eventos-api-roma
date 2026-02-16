@@ -23,10 +23,4 @@ public class UsuarioComum extends Usuario {
     public void AtivarUsuario(){
         super.statusUsuario = true;
     }
-
-    public void statusUsuaraio(){
-        System.out.println("Deseja desativar a conta sua conta?");
-        
-        switch ()
-    }
 }

@@ -98,11 +98,17 @@ public abstract class Usuario {
         if(this.dataNascimento != null){ // Se diferente de null
             LocalDate dataAtual = LocalDate.now(); // Pega a data atual (hoje)
             Period anosIdade = Period.between(dataNascimento, dataAtual); // O "Period" representa uma quantidade de tempo baseada em calendário. o between calcula a diferença de duas datas
-            return anosIdade.getYears() + " anos"; // Como queremos saber somente a idade, pegamos apenas os Years
+            return anosIdade.getYears() + " anos, " + anosIdade.getMonths() + " meses, " + anosIdade.getDays() + " dias"; // Como queremos saber somente a idade, pegamos apenas os Years
         }else {
             return "Idade não cadastrada corretamente! Verifique novamente sua informações!";
         }
     }
 
+    public void desativar() {
+        this.statusUsuario = false;
+    }
 
+    public void ativar() {
+        this.statusUsuario = true;
+    }
 }

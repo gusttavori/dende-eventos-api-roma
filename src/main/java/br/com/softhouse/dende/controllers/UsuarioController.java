@@ -9,6 +9,7 @@ import br.com.dende.softhouse.annotations.request.RequestMapping;
 import br.com.dende.softhouse.annotations.request.PathVariable;
 import br.com.dende.softhouse.process.route.ResponseEntity;
 import br.com.softhouse.dende.model.Usuario;
+import br.com.softhouse.dende.model.UsuarioComum;
 import br.com.softhouse.dende.repositories.Repositorio;
 
 @Controller
@@ -22,7 +23,7 @@ public class UsuarioController {
     }
 
     @PostMapping
-    public ResponseEntity<String> cadastroUsuario(@RequestBody Usuario usuario){
+    public ResponseEntity<String> cadastroUsuario(@RequestBody UsuarioComum usuario){
         return ResponseEntity.ok("Usuario " + usuario.getEmail() + " registrado com sucesso!");
     }
 
