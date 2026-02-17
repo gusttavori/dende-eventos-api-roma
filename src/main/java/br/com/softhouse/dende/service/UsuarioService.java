@@ -1,59 +1,63 @@
 package br.com.softhouse.dende.service;
 
-import br.com.softhouse.dende.model.Usuario;
 import br.com.softhouse.dende.model.UsuarioComum;
+import br.com.softhouse.dende.model.Usuario;
+import br.com.softhouse.dende.repositories.Repositorio;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 
 public class UsuarioService {
 
-    private List<Usuario> usuarios = new ArrayList<>();
-    private int proximoId = 1;
+    private final Repositorio repositorio = Repositorio.getInstance();
 
-    //cadastrar usuários
+    /**
+     * US 1 – Cadastrar Usuário Comum
+     * E-mail único
+     */
     public UsuarioComum cadastrarUsuarioComum(
             String nome,
             LocalDate dataNascimento,
             String sexo,
             String email,
             String senha
-    ){
-        // Regra: email único
-        boolean emailExiste = usuarios.stream()
-                .anyMatch(u -> u.getEmail().equalsIgnoreCase(email)); // percorre e retorna um valor booleano (true ou false).
+    ) {
 
-        if (emailExiste) {
-            throw new IllegalArgumentException("E-mail já cadastrado!"); // Se email for igual, retorna uma excessão
+        if (repositorio.buscarUsuarioPorEmail(email) != null) {
+            throw new IllegalArgumentException("E-mail já cadastrado!");
         }
-        // Criar usuário
+
         UsuarioComum usuario = new UsuarioComum(
-                proximoId++,
+                repositorio.gerarId(),
                 nome,
                 dataNascimento,
                 sexo,
                 email,
                 senha
         );
-        // Salvar
-        usuarios.add(usuario);
+
+        repositorio.salvarUsuario(usuario);
         return usuario;
     }
 
-    //Listar usuários
+    /**
+     * Lista todos os usuários cadastrados
+     */
     public List<Usuario> listarUsuarios() {
-        return usuarios;
+        return repositorio.listarUsuarios();
     }
 
+    /**
+     * US 6 – Reativar Usuário
+     */
     public String reativarPerfil(String email, String senha) {
+        Usuario usuario = repositorio.buscarUsuarioPorEmail(email);
 
-        for (Usuario u : usuarios) {
-            if (u.getEmail().equalsIgnoreCase(email) && u.getSenha().equals(senha)) {
-                u.ativar(); // statusUsuario = true
-                return "Perfil reativado com sucesso!";
-            }
+        if (usuario == null) {
+            return "Usuário não encontrado.";
         }
-        return "Credenciais inválidas. Não foi possível reativar.";
+
+        boolean reativado = usuario.reativar(senha);
+        return reativado ? "Perfil reativado com sucesso!" : "Senha incorreta. Não foi possível reativar.";
     }
 }

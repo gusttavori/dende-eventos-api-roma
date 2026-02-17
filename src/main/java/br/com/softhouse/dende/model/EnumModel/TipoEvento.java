@@ -22,5 +22,6 @@ public enum TipoEvento {
     CULTO,
     CELEBRACAO,
     CAMPEONATO,
-    CORRIDA;
+    CORRIDA,
+    OUTRO;
 }

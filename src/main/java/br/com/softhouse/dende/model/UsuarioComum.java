@@ -3,7 +3,12 @@ package br.com.softhouse.dende.model;
 import java.time.LocalDate;
 
 public class UsuarioComum extends Usuario {
-    public UsuarioComum(Integer id, String nome, LocalDate dataNascimento, String sexo, String email, String senha) {
+
+    public UsuarioComum(Integer id, String nome,
+                        LocalDate dataNascimento,
+                        String sexo,
+                        String email,
+                        String senha) {
         super(id, nome, dataNascimento, sexo, email, senha);
     }
 
@@ -12,15 +17,6 @@ public class UsuarioComum extends Usuario {
 
     @Override
     public String toString() {
-        return "Usuario Comum " +
-                super.toString() + "\n";
-    }
-
-    public void DesativarUsuario(){
-        super.statusUsuario = false;
-    }
-
-    public void AtivarUsuario(){
-        super.statusUsuario = true;
+        return "Usuário Comum" + super.toString() + "\n";
     }
 }

@@ -3,11 +3,12 @@ package br.com.softhouse.dende.model;
 import br.com.softhouse.dende.model.EnumModel.TipoEvento;
 
 import java.time.Duration;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
+
 public class Evento {
+
     private int id;
     private Organizador organizador;
     private String nome;
@@ -20,13 +21,28 @@ public class Evento {
     private Double taxaCancelamentoIngresso;
     private int capacidadeMaxima;
     private String local;
-    private boolean ativo;
+    private boolean ativo = false; // Evento nasce INATIVO por regra de negócio
     private Evento eventoPrincipal;
 
-    public Evento(){
+
+    public Evento() {
     }
 
-    public Evento(int id, Organizador organizador, String nome, String paginaWeb, String descricao, LocalDateTime dataInicio, LocalDateTime dataFim, TipoEvento tipoEvento, Double precoUnitarioIngresso, Double taxaCancelamentoIngresso, int capacidadeMaxima, String local, Evento eventoPrincipal, boolean ativo) {
+    public Evento(
+            int id,
+            Organizador organizador,
+            String nome,
+            String paginaWeb,
+            String descricao,
+            LocalDateTime dataInicio,
+            LocalDateTime dataFim,
+            TipoEvento tipoEvento,
+            Double precoUnitarioIngresso,
+            Double taxaCancelamentoIngresso,
+            int capacidadeMaxima,
+            String local,
+            Evento eventoPrincipal
+    ) {
         this.id = id;
         this.organizador = organizador;
         this.nome = nome;
@@ -40,11 +56,6 @@ public class Evento {
         this.capacidadeMaxima = capacidadeMaxima;
         this.local = local;
         this.eventoPrincipal = eventoPrincipal;
-        this.ativo = ativo;
-    }
-
-    public Evento getEventoPrincipal() {
-        return eventoPrincipal;
     }
 
     public int getId() {
@@ -140,54 +151,98 @@ public class Evento {
     }
 
     public void setLocal(String local) {
-        local = local;
-    }
-
-
-
-    @Override
-    public String toString() {
-        return "Evento{" +
-                "id=" + id +
-                ", organizador=" + organizador +
-                ", nome='" + nome + '\'' +
-                ", paginaWeb='" + paginaWeb + '\'' +
-                ", Descricao='" + descricao + '\'' +
-                ", dataInicio=" + dataInicio +
-                ", dataFim=" + dataFim +
-                ", tipoEvento=" + tipoEvento +
-                ", precoUnitarioIngresso=" + precoUnitarioIngresso +
-                ", taxaCancelamentoIngresso=" + taxaCancelamentoIngresso +
-                ", capacidadeMaxima=" + capacidadeMaxima +
-                ", Local='" + local + '\'' +
-                ", ativo=" + ativo +
-                '}';
-    }
-
-    public void validarEvento() throws Exception {
-        LocalDateTime agora = LocalDateTime.now();
-
-        if (this.dataInicio.isBefore(agora)) {
-            throw new Exception("A data de início não pode ser anterior à atual.");
-        }
-
-        if (this.dataFim.isBefore(this.dataInicio)) {
-            throw new Exception("A data de fim não pode ser anterior ao início.");
-        }
-
-        long duracao = Duration.between(dataInicio, dataFim).toMinutes();
-        if (duracao < 30) {
-            throw new Exception("O evento deve ter no mínimo 30 minutos de duração.");
-        }
+        this.local = local;
     }
 
     public boolean isAtivo() {
         return ativo;
     }
 
-    // Metodo para verificar se o evento está ocorrendo agora (US 5)
+    public void setAtivo(boolean ativo) {
+        this.ativo = ativo;
+    }
+
+    public Evento getEventoPrincipal() {
+        return eventoPrincipal;
+    }
+
+    public void setEventoPrincipal(Evento eventoPrincipal) {
+        this.eventoPrincipal = eventoPrincipal;
+    }
+
+    // =========================
+    // REGRAS DE NEGÓCIO
+    // =========================
+
+    public void validarEvento() {
+
+        LocalDateTime agora = LocalDateTime.now();
+
+        // Regra: data de início não pode ser anterior à atual
+        if (dataInicio.isBefore(agora)) {
+            throw new IllegalArgumentException(
+                    "A data de início não pode ser anterior à data atual."
+            );
+        }
+
+        // Regra: data fim não pode ser anterior ao início
+        if (dataFim.isBefore(dataInicio)) {
+            throw new IllegalArgumentException(
+                    "A data de fim não pode ser anterior à data de início."
+            );
+        }
+
+        // Regra: duração mínima de 30 minutos
+        long duracao = Duration.between(dataInicio, dataFim).toMinutes();
+        if (duracao < 30) {
+            throw new IllegalArgumentException(
+                    "O evento deve ter duração mínima de 30 minutos."
+            );
+        }
+    }
+
+    //Ativa o evento
+    public void ativar() {
+        this.ativo = true;
+    }
+
+    //Desativa o evento
+    public void desativar() {
+        this.ativo = false;
+    }
+
+    /**
+     * Verifica se o evento está acontecendo agora
+     * Usado para bloquear desativação do organizador
+     */
     public boolean estaEmExecucao() {
         LocalDateTime agora = LocalDateTime.now();
         return agora.isAfter(dataInicio) && agora.isBefore(dataFim);
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Evento)) return false;
+        Evento evento = (Evento) o;
+        return id == evento.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
+
+    @Override
+    public String toString() {
+        return "Evento{" +
+                "id=" + id +
+                ", nome='" + nome + '\'' +
+                ", dataInicio=" + dataInicio +
+                ", dataFim=" + dataFim +
+                ", local='" + local + '\'' +
+                ", ativo=" + ativo +
+                '}';
+    }
+
 }

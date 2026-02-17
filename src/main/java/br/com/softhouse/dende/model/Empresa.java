@@ -3,16 +3,19 @@ package br.com.softhouse.dende.model;
 import java.time.LocalDate;
 import java.util.Objects;
 
+
 public class Empresa {
+
     private String cnpj;
     private String razaoSocial;
     private String nomeFantasia;
     private LocalDate dataAbertura;
 
-    public Empresa(){
+    public Empresa() {
     }
 
     public Empresa(String cnpj, String razaoSocial, String nomeFantasia, LocalDate dataAbertura) {
+
         this.cnpj = cnpj;
         this.razaoSocial = razaoSocial;
         this.nomeFantasia = nomeFantasia;
@@ -21,10 +24,6 @@ public class Empresa {
 
     public String getCnpj() {
         return cnpj;
-    }
-
-    public void setCnpj(String cnpj) {
-        this.cnpj = cnpj;
     }
 
     public String getRazaoSocial() {
@@ -56,21 +55,21 @@ public class Empresa {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Empresa empresa = (Empresa) o;
-        return Objects.equals(cnpj, empresa.cnpj) && Objects.equals(razaoSocial, empresa.razaoSocial) && Objects.equals(nomeFantasia, empresa.nomeFantasia) && Objects.equals(dataAbertura, empresa.dataAbertura);
+        return Objects.equals(cnpj, empresa.cnpj);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(cnpj, razaoSocial, nomeFantasia, dataAbertura);
+        return Objects.hash(cnpj);
     }
 
     @Override
     public String toString() {
         return
                 "\n  CNPJ: " + cnpj +
-                "\n  Razao Social: " + razaoSocial +
-                "\n  Nome Fantasia: " + nomeFantasia +
-                "\n  Data de Abertura: " + dataAbertura +
-                '\n';
+                        "\n  Razão Social: " + razaoSocial +
+                        "\n  Nome Fantasia: " + nomeFantasia +
+                        "\n  Data de Abertura: " + dataAbertura +
+                        '\n';
     }
 }
