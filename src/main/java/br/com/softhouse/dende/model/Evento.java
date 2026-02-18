@@ -1,5 +1,6 @@
 package br.com.softhouse.dende.model;
 
+import br.com.softhouse.dende.model.EnumModel.ModalidadeEvento;
 import br.com.softhouse.dende.model.EnumModel.TipoEvento;
 
 import java.time.Duration;
@@ -17,17 +18,18 @@ public class Evento {
     private LocalDateTime dataInicio;
     private LocalDateTime dataFim;
     private TipoEvento tipoEvento;
+    private ModalidadeEvento modalidade;  // CAMPO ADICIONADO
     private Double precoUnitarioIngresso;
     private Double taxaCancelamentoIngresso;
     private int capacidadeMaxima;
     private String local;
-    private boolean ativo = false; // Evento nasce INATIVO por regra de negócio
+    private boolean ativo = false;
     private Evento eventoPrincipal;
-
 
     public Evento() {
     }
 
+    // Construtor atualizado
     public Evento(
             int id,
             Organizador organizador,
@@ -37,6 +39,7 @@ public class Evento {
             LocalDateTime dataInicio,
             LocalDateTime dataFim,
             TipoEvento tipoEvento,
+            ModalidadeEvento modalidade,  // NOVO PARÂMETRO
             Double precoUnitarioIngresso,
             Double taxaCancelamentoIngresso,
             int capacidadeMaxima,
@@ -51,6 +54,7 @@ public class Evento {
         this.dataInicio = dataInicio;
         this.dataFim = dataFim;
         this.tipoEvento = tipoEvento;
+        this.modalidade = modalidade;  // NOVO CAMPO
         this.precoUnitarioIngresso = precoUnitarioIngresso;
         this.taxaCancelamentoIngresso = taxaCancelamentoIngresso;
         this.capacidadeMaxima = capacidadeMaxima;
@@ -122,6 +126,14 @@ public class Evento {
         this.tipoEvento = tipoEvento;
     }
 
+    public ModalidadeEvento getModalidade() {
+        return modalidade;
+    }
+
+    public void setModalidade(ModalidadeEvento modalidade) {
+        this.modalidade = modalidade;
+    }
+
     public Double getPrecoUnitarioIngresso() {
         return precoUnitarioIngresso;
     }
@@ -169,7 +181,6 @@ public class Evento {
     public void setEventoPrincipal(Evento eventoPrincipal) {
         this.eventoPrincipal = eventoPrincipal;
     }
-
     // =========================
     // REGRAS DE NEGÓCIO
     // =========================

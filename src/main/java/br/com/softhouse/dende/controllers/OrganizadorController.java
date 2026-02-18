@@ -3,80 +3,69 @@ package br.com.softhouse.dende.controllers;
 import br.com.dende.softhouse.annotations.Controller;
 import br.com.dende.softhouse.annotations.request.*;
 import br.com.dende.softhouse.process.route.ResponseEntity;
-import br.com.softhouse.dende.model.Evento;
 import br.com.softhouse.dende.model.Organizador;
+import br.com.softhouse.dende.model.Usuario;
 import br.com.softhouse.dende.service.OrganizadorService;
 
 import java.util.List;
 
-
 @Controller
-@RequestMapping(path = "/organizadores")
+@RequestMapping(path = "/api")
 public class OrganizadorController {
 
-    private final OrganizadorService organizadorService = new OrganizadorService();
+    private final OrganizadorService service = new OrganizadorService();
 
-    public OrganizadorController() {
+    @PostMapping(path = "/organizadores")
+    public ResponseEntity<Organizador> cadastrar(@RequestBody Organizador organizador) {
+        try {
+            // VALIDAÇÃO: senha não pode ser nula
+            if (organizador.getSenha() == null || organizador.getSenha().trim().isEmpty()) {
+                return ResponseEntity.status(400, null);
+            }
+            return ResponseEntity.status(201, service.cadastrar(organizador));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(400, null);
+        }
     }
 
-    @PostMapping
-    public ResponseEntity<String> cadastrarOrganizador(@RequestBody Organizador organizador) {
-        organizadorService.cadastrarOrganizador(
-                organizador.getNome(),
-                organizador.getDataNascimento(),
-                organizador.getSexo(),
-                organizador.getEmail(),
-                organizador.getSenha(),
-                organizador.getEmpresa()
-        );
-        return ResponseEntity.ok("Organizador " + organizador.getEmail() + " registrado com sucesso!");
-    }
-
-    @PutMapping(path = "/{email}")
-    public ResponseEntity<String> atualizarOrganizador(
+    @PutMapping(path = "/organizadores/{email}")
+    public ResponseEntity<Organizador> alterar(
             @PathVariable(parameter = "email") String email,
-            @RequestBody Organizador organizadorAtualizado) {
-
-        organizadorService.atualizarOrganizador(
-                email,
-                organizadorAtualizado.getNome(),
-                organizadorAtualizado.getDataNascimento(),
-                organizadorAtualizado.getSexo(),
-                organizadorAtualizado.getSenha(),
-                organizadorAtualizado.getEmpresa()
-        );
-
-        return ResponseEntity.ok("Organizador " + email + " atualizado com sucesso!");
+            @RequestBody Organizador organizador
+    ) {
+        try {
+            return ResponseEntity.ok(service.atualizar(email, organizador));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(404, null);
+        }
     }
 
-    @DeleteMapping(path = "/{email}")
-    public ResponseEntity<String> desativarOrganizador(@PathVariable(parameter = "email") String email) {
-        organizadorService.desativarOrganizador(email);
-        return ResponseEntity.ok("Organizador " + email + " desativado com sucesso!");
+    @GetMapping(path = "/organizadores")
+    public ResponseEntity<List<Organizador>> listar() {
+        return ResponseEntity.ok(service.listar());
     }
 
-    @GetMapping
-    public ResponseEntity<List<Organizador>> listarOrganizadores() {
-        return ResponseEntity.ok(organizadorService.listarOrganizadores());
+    @GetMapping(path = "/organizadores/{email}")
+    public ResponseEntity<Organizador> visualizar(@PathVariable(parameter = "email") String email) {
+        try {
+            // Use o service em vez de acessar o repositório diretamente
+            Organizador organizador = service.buscarPorEmail(email);
+            return ResponseEntity.ok(organizador);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(404, null);
+        }
     }
 
-    // =========================
-    // Eventos do Organizador
-    // =========================
-
-    @PostMapping(path = "/{email}/eventos")
-    public ResponseEntity<String> cadastrarEvento(
+    @PatchMapping(path = "/organizadores/{email}/{status}")
+    public ResponseEntity<String> alterarStatus(
             @PathVariable(parameter = "email") String email,
-            @RequestBody Evento evento) {
-
-        Organizador organizador = organizadorService.listarOrganizadores().stream()
-                .filter(o -> o.getEmail().equals(email))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Organizador não encontrado"));
-
-        organizador.cadastrarEvento(evento);
-        return ResponseEntity.ok("Evento " + evento.getNome() + " cadastrado para o organizador " + email);
+            @PathVariable(parameter = "status") String status
+    ) {
+        try {
+            service.alterarStatus(email, status);
+            return ResponseEntity.ok("Status alterado com sucesso");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.status(400, e.getMessage());
+        }
     }
 }
-
-

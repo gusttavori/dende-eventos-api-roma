@@ -12,11 +12,10 @@ public class UsuarioComum extends Usuario {
         super(id, nome, dataNascimento, sexo, email, senha);
     }
 
-    public UsuarioComum() {
-    }
+    public UsuarioComum() {}
 
     @Override
     public String toString() {
-        return "Usuário Comum" + super.toString() + "\n";
+        return "Usuário Comum\n" + super.toString();
     }
 }

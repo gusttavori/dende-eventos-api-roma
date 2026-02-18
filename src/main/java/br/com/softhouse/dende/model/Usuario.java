@@ -12,12 +12,10 @@ public abstract class Usuario {
     private String sexo;
     private String email;
     private String senha;
-
     protected boolean statusUsuario = true;
 
-
-    public Usuario(Integer id, String nome, LocalDate dataNascimento,
-                   String sexo, String email, String senha) {
+    protected Usuario(Integer id, String nome, LocalDate dataNascimento,
+                      String sexo, String email, String senha) {
         this.id = id;
         this.nome = nome;
         this.dataNascimento = dataNascimento;
@@ -26,95 +24,90 @@ public abstract class Usuario {
         this.senha = senha;
     }
 
-    public Usuario() {
-    }
+    protected Usuario() {}
 
+    // ===== GETTERS =====
+    public Integer getId() { return id; }
+    public String getNome() { return nome; }
+    public LocalDate getDataNascimento() { return dataNascimento; }
+    public String getSexo() { return sexo; }
+    public String getEmail() { return email; }
+    public String getSenha() { return senha; }
+    public boolean isAtivo() { return statusUsuario; }
 
-    public Integer getId() {
-        return id;
-    }
-
-    public String getNome() {
-        return nome;
-    }
-
-    public LocalDate getDataNascimento() {
-        return dataNascimento;
-    }
-
-    public String getSexo() {
-        return sexo;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public Boolean getStatusUsuario() {
-        return statusUsuario;
-    }
-
-    public String getSenha(){
-        return senha;
-    }
-    /**
-     * Permite alterar dados do perfil do usuário,
-     * exceto o email
-     */
+    // ===== REGRAS =====
     public void alterarPerfil(String nome, LocalDate dataNascimento, String sexo) {
         this.nome = nome;
         this.dataNascimento = dataNascimento;
         this.sexo = sexo;
     }
 
-    public void setSenha(String senha) {
-        this.senha = senha;
-    }
-
-    // =========================
-    // REGRAS DE NEGÓCIO
-    // =========================
-
-    /**
-     * Retorna a idade formatada em anos, meses e dias
-     * (US 4 – Visualizar Perfil)
-     */
-    public String getIdade() {
-        if (this.dataNascimento != null) {
-            LocalDate dataAtual = LocalDate.now();
-            Period idade = Period.between(dataNascimento, dataAtual);
-
-            return idade.getYears() + " anos, " +
-                    idade.getMonths() + " meses, " +
-                    idade.getDays() + " dias";
-        }
-        return "Idade não cadastrada corretamente!";
-    }
-
-    /**
-     * Desativa o usuário (US 5)
-     * Pode ser sobrescrito por subclasses
-     */
     public void desativar() {
         this.statusUsuario = false;
     }
 
-    /**
-     * Reativa o usuário caso a senha esteja correta
-     * (US 6 – Reativar Usuário)
-     */
+    public void ativar() {
+        this.statusUsuario = true;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public void setNome(String nome) {
+        this.nome = nome;
+    }
+
+    public void setDataNascimento(LocalDate dataNascimento) {
+        this.dataNascimento = dataNascimento;
+    }
+
+    public void setSexo(String sexo) {
+        this.sexo = sexo;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public void setSenha(String senha) {
+        this.senha = senha;
+    }
+
+    public boolean isStatusUsuario() {
+        return statusUsuario;
+    }
+
+    public void setStatusUsuario(boolean statusUsuario) {
+        this.statusUsuario = statusUsuario;
+    }
+
     public boolean reativar(String senhaInformada) {
+        System.out.println("\n--- DENTRO DO MÉTODO reativar (Usuario) ---");
+        System.out.println("Senha armazenada (this.senha): '" + this.senha + "'");
+        System.out.println("Senha informada (parâmetro): '" + senhaInformada + "'");
+        System.out.println("Comparação: " + this.senha.equals(senhaInformada));
+
         if (this.senha.equals(senhaInformada)) {
-            this.statusUsuario = true;
+            System.out.println("SENHA CORRETA! Ativando usuário...");
+            ativar();
             return true;
         }
+
+        System.out.println("SENHA INCORRETA!");
         return false;
+    }
+
+    public String getIdade() {
+        if (dataNascimento == null) return "Não informada";
+        Period p = Period.between(dataNascimento, LocalDate.now());
+        return p.getYears() + " anos, " + p.getMonths() + " meses";
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof Usuario)) return false;
         Usuario usuario = (Usuario) o;
         return Objects.equals(id, usuario.id) &&
                 Objects.equals(email, usuario.email);
@@ -127,12 +120,10 @@ public abstract class Usuario {
 
     @Override
     public String toString() {
-        return
-                "\nNome: " + nome +
-                        "\nEmail: " + email +
-                        "\nSexo: " + sexo +
-                        "\nData de nascimento: " + dataNascimento +
-                        " (" + getIdade() + ")" +
-                        "\nStatus: " + (statusUsuario ? "Ativo" : "Desativado");
+        return "Nome: " + nome +
+                "\nEmail: " + email +
+                "\nSexo: " + sexo +
+                "\nNascimento: " + dataNascimento +
+                "\nStatus: " + (statusUsuario ? "Ativo" : "Inativo");
     }
 }

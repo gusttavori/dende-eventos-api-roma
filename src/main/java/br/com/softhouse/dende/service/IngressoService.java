@@ -1,9 +1,7 @@
 package br.com.softhouse.dende.service;
 
+import br.com.softhouse.dende.model.*;
 import br.com.softhouse.dende.model.EnumModel.StatusIngresso;
-import br.com.softhouse.dende.model.Evento;
-import br.com.softhouse.dende.model.Ingresso;
-import br.com.softhouse.dende.model.Usuario;
 import br.com.softhouse.dende.repositories.Repositorio;
 
 import java.time.LocalDateTime;
@@ -11,95 +9,92 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * Service responsável pelas regras de negócio de ingressos.
- */
 public class IngressoService {
 
     private final Repositorio repositorio = Repositorio.getInstance();
 
-    /**
-     * US 13 – Comprar Ingresso
-     */
-    public List<Ingresso> comprarIngresso(Usuario usuario, Evento eventoSelecionado) {
+    public Ingresso comprarIngresso(String emailUsuario, int eventoId) {
 
-        // Regra: evento deve estar ativo
-        if (!eventoSelecionado.isAtivo()) {
-            throw new IllegalStateException("Evento não está ativo.");
+        Usuario usuario = repositorio.buscarUsuarioPorEmail(emailUsuario);
+        Evento evento = repositorio.buscarEventoPorId(eventoId);
+
+        if (usuario == null) {
+            throw new IllegalArgumentException("Usuário não encontrado");
         }
 
-        // Regra: evento não pode ter finalizado
-        if (eventoSelecionado.getDataFim().isBefore(LocalDateTime.now())) {
-            throw new IllegalStateException("Evento já foi finalizado.");
+        if (!(usuario instanceof UsuarioComum)) {
+            throw new IllegalArgumentException("Apenas usuários comuns podem comprar ingressos");
         }
 
-        // Lista de ingressos gerados na compra
-        List<Ingresso> ingressosGerados = new java.util.ArrayList<>();
-
-        // Se existir evento principal, compra primeiro o ingresso dele (US 13)
-        if (eventoSelecionado.getEventoPrincipal() != null) {
-            Ingresso ingressoPrincipal = new Ingresso(
-                    repositorio.gerarId(),
-                    usuario,
-                    eventoSelecionado.getEventoPrincipal(),
-                    eventoSelecionado.getEventoPrincipal().getPrecoUnitarioIngresso()
-            );
-            repositorio.salvarIngresso(ingressoPrincipal);
-            ingressosGerados.add(ingressoPrincipal);
+        if (evento == null) {
+            throw new IllegalArgumentException("Evento não encontrado");
         }
 
-        // Ingresso do evento selecionado
-        Ingresso ingressoAtual = new Ingresso(
+        if (!evento.isAtivo()) {
+            throw new IllegalStateException("Evento não está ativo");
+        }
+
+        if (evento.getDataFim().isBefore(LocalDateTime.now())) {
+            throw new IllegalStateException("Evento já finalizado");
+        }
+
+        // Verificar capacidade
+        long ingressosVendidos = repositorio.listarIngressosPorEvento(evento).stream()
+                .filter(i -> i.getStatusIngresso() == StatusIngresso.ATIVO)
+                .count();
+
+        if (ingressosVendidos >= evento.getCapacidadeMaxima()) {
+            throw new IllegalStateException("Ingressos esgotados para este evento");
+        }
+
+        Ingresso ingresso = new Ingresso(
                 repositorio.gerarId(),
                 usuario,
-                eventoSelecionado,
-                eventoSelecionado.getPrecoUnitarioIngresso()
+                evento,
+                evento.getPrecoUnitarioIngresso()
         );
 
-        repositorio.salvarIngresso(ingressoAtual);
-        ingressosGerados.add(ingressoAtual);
-
-        return ingressosGerados;
+        repositorio.salvarIngresso(ingresso);
+        return ingresso;
     }
 
-    /**
-     * US 14 – Cancelar Ingresso
-     */
-    public void cancelarIngresso(Ingresso ingresso) {
+    public void cancelarIngresso(int ingressoId) {
+        Ingresso ingresso = repositorio.buscarIngressoPorId(ingressoId);
 
-        if (ingresso.getStatusIngresso() == StatusIngresso.CANCELADO) {
-            throw new IllegalStateException("Ingresso já está cancelado.");
+        if (ingresso == null) {
+            throw new IllegalArgumentException("Ingresso não encontrado");
         }
 
-        ingresso.setStatusIngresso(StatusIngresso.CANCELADO);
-
-        // Aqui futuramente você pode:
-        // - calcular estorno
-        // - devolver vaga ao evento
+        ingresso.cancelar();
     }
 
-    /**
-     * US 15 – Listar ingressos do usuário
-     */
-    public List<Ingresso> listarIngressosUsuario(Usuario usuario) {
-        return repositorio.listarIngressos().stream()
-                .filter(i -> i.getUsuario().equals(usuario))
-                .sorted(Comparator
-                        .comparing((Ingresso i) -> i.getEvento().getDataInicio())
-                        .thenComparing(i -> i.getEvento().getNome()))
-                .collect(Collectors.toList());
-    }
+    public List<Ingresso> listarIngressosUsuario(String emailUsuario) {
+        Usuario usuario = repositorio.buscarUsuarioPorEmail(emailUsuario);
 
-    /**
-     * US 12 – Feed de Eventos
-     */
-    public List<Evento> getFeedEventos(List<Evento> todosEventos) {
-        return todosEventos.stream()
-                .filter(Evento::isAtivo) // apenas ativos
-                .filter(e -> e.getDataFim().isAfter(LocalDateTime.now())) // não finalizados
-                .sorted(Comparator
-                        .comparing(Evento::getDataInicio)
-                        .thenComparing(Evento::getNome))
+        if (usuario == null) {
+            throw new IllegalArgumentException("Usuário não encontrado");
+        }
+
+        return repositorio.listarIngressosPorUsuario(usuario).stream()
+                .sorted((i1, i2) -> {
+                    // Primeiro: eventos ativos e não realizados
+                    boolean i1Ativo = i1.getStatusIngresso() == StatusIngresso.ATIVO &&
+                            i1.getEvento().getDataFim().isAfter(LocalDateTime.now());
+                    boolean i2Ativo = i2.getStatusIngresso() == StatusIngresso.ATIVO &&
+                            i2.getEvento().getDataFim().isAfter(LocalDateTime.now());
+
+                    if (i1Ativo && !i2Ativo) return -1;
+                    if (!i1Ativo && i2Ativo) return 1;
+
+                    // Depois: ordena por data do evento
+                    int compareData = i1.getEvento().getDataInicio()
+                            .compareTo(i2.getEvento().getDataInicio());
+                    if (compareData != 0) return compareData;
+
+                    // Por fim: ordena alfabeticamente
+                    return i1.getEvento().getNome()
+                            .compareTo(i2.getEvento().getNome());
+                })
                 .collect(Collectors.toList());
     }
 }
