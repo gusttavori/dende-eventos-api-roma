@@ -26,16 +26,15 @@ public abstract class Usuario {
 
     protected Usuario() {}
 
-    // ===== GETTERS =====
     public Integer getId() { return id; }
     public String getNome() { return nome; }
     public LocalDate getDataNascimento() { return dataNascimento; }
     public String getSexo() { return sexo; }
     public String getEmail() { return email; }
     public String getSenha() { return senha; }
+
     public boolean isAtivo() { return statusUsuario; }
 
-    // ===== REGRAS =====
     public void alterarPerfil(String nome, LocalDate dataNascimento, String sexo) {
         this.nome = nome;
         this.dataNascimento = dataNascimento;
@@ -82,25 +81,27 @@ public abstract class Usuario {
         this.statusUsuario = statusUsuario;
     }
 
+    // Reativar a conta validando a senha fornecida
     public boolean reativar(String senhaInformada) {
         System.out.println("\n--- DENTRO DO MÉTODO reativar (Usuario) ---");
         System.out.println("Senha armazenada (this.senha): '" + this.senha + "'");
         System.out.println("Senha informada (parâmetro): '" + senhaInformada + "'");
         System.out.println("Comparação: " + this.senha.equals(senhaInformada));
 
+        // Verifica se a senha fornecida é igual à senha armazenada
         if (this.senha.equals(senhaInformada)) {
             System.out.println("SENHA CORRETA! Ativando usuário...");
             ativar();
             return true;
         }
-
         System.out.println("SENHA INCORRETA!");
         return false;
     }
 
+    // Calcula e retorna a idade do usuário em anos, meses e dias
     public String getIdade() {
-        if (dataNascimento == null) return "Não informada";
-        Period p = Period.between(dataNascimento, LocalDate.now());
+        if (dataNascimento == null) return "Não informada"; // Se a data de nascimento for nula, retorna uma mensagem padrão
+        Period p = Period.between(dataNascimento, LocalDate.now()); // Calcula o período entre a data de nascimento e a data atual
         return p.getYears() + " anos, " + p.getMonths() + " meses";
     }
 
@@ -117,6 +118,7 @@ public abstract class Usuario {
     public int hashCode() {
         return Objects.hash(id, email);
     }
+
 
     @Override
     public String toString() {

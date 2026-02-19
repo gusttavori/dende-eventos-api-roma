@@ -11,6 +11,7 @@ public class UsuarioService {
 
     private final Repositorio repositorio = Repositorio.getInstance();
 
+    // Cadastra um novo usuário comum
     public UsuarioComum cadastrarUsuarioComum(
             String nome,
             LocalDate dataNascimento,
@@ -18,10 +19,12 @@ public class UsuarioService {
             String email,
             String senha
     ) {
+        // Verifica se o email já está cadastrado
         if (repositorio.buscarUsuarioPorEmail(email) != null) {
             throw new IllegalArgumentException("E-mail já cadastrado");
         }
 
+        // Cria o novo usuário com ID gerado
         UsuarioComum usuario = new UsuarioComum(
                 repositorio.gerarId(),
                 nome,
@@ -35,6 +38,7 @@ public class UsuarioService {
         return usuario;
     }
 
+    // Busca um usuário pelo ID
     public Usuario buscarPorId(Integer id) {
         Usuario usuario = repositorio.buscarUsuarioPorId(id);
         if (usuario == null) {
@@ -43,6 +47,7 @@ public class UsuarioService {
         return usuario;
     }
 
+    // Busca um usuário pelo email
     public Usuario buscarPorEmail(String email) {
         Usuario usuario = repositorio.buscarUsuarioPorEmail(email);
         if (usuario == null) {
@@ -51,6 +56,7 @@ public class UsuarioService {
         return usuario;
     }
 
+    // Atualiza dados de um usuário (versão com ID)
     public void atualizarUsuario(Integer id, Usuario dados) {
         Usuario usuario = buscarPorId(id);
         usuario.alterarPerfil(
@@ -64,6 +70,7 @@ public class UsuarioService {
         }
     }
 
+    // Altera o status de um usuário (ativar/desativar)
     public void alterarStatus(Integer id, String status) {
         Usuario usuario = buscarPorId(id);
 
@@ -76,54 +83,38 @@ public class UsuarioService {
         }
     }
 
+    // Reativa um usuário após validação de senha
     public void reativar(String email, String senha) {
-        System.out.println("\n=== INÍCIO DA REATIVAÇÃO ===");
-        System.out.println("1. Buscando usuário com email: " + email);
-
         Usuario usuario = buscarPorEmail(email);
 
-        System.out.println("2. Usuário encontrado: " + usuario.getNome());
-        System.out.println("3. Senha ARMAZENADA no sistema: '" + usuario.getSenha() + "'");
-        System.out.println("4. Senha FORNECIDA no request: '" + senha + "'");
-        System.out.println("5. Comparação (equals): " + usuario.getSenha().equals(senha));
-        System.out.println("6. Comparação (==): " + (usuario.getSenha() == senha));
-        System.out.println("7. Status atual do usuário: " + (usuario.isAtivo() ? "ATIVO" : "INATIVO"));
-
-        // Verificação 1: Usuário já está ativo?
+        // Verifica se o usuário já está ativo
         if (usuario.isAtivo()) {
             System.out.println("8. ERRO: Usuário já está ativo!");
             throw new IllegalArgumentException("Usuário já está ativo");
         }
 
-        // Verificação 2: Senha (FORÇANDO COMPARAÇÃO)
-        System.out.println("9. Chamando método reativar da classe Usuario...");
         boolean resultado = usuario.reativar(senha);
-        System.out.println("10. Resultado do método reativar: " + resultado);
 
         if (!resultado) {
-            System.out.println("11. ERRO: Senha incorreta!");
             throw new IllegalArgumentException("Senha incorreta");
         }
-
-        System.out.println("12. SUCESSO! Usuário reativado!");
     }
 
+    // Lista todos os usuários
     public List<Usuario> listarUsuarios() {
         return repositorio.listarUsuarios();
     }
 
-    public void atualizarUsuario(String email, UsuarioComum dados) {  // ← MUDOU PARA UsuarioComum
+    // Atualiza dados de um usuário (versão com email)
+    public void atualizarUsuario(String email, UsuarioComum dados) {
         Usuario usuario = buscarPorEmail(email);
 
-        // Verifica se o usuário existente é do tipo correto
+        // Verifica se o usuário é do tipo comum
         if (!(usuario instanceof UsuarioComum)) {
             throw new IllegalArgumentException("Usuário não é do tipo comum");
         }
 
-        usuario.alterarPerfil(
-                dados.getNome(),
-                dados.getDataNascimento(),
-                dados.getSexo()
+        usuario.alterarPerfil(dados.getNome(), dados.getDataNascimento(), dados.getSexo()
         );
 
         if (dados.getSenha() != null && !dados.getSenha().isEmpty()) {

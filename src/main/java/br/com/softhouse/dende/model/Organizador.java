@@ -1,5 +1,6 @@
 package br.com.softhouse.dende.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -7,6 +8,8 @@ import java.util.List;
 public class Organizador extends Usuario {
 
     private Empresa empresa;
+
+    @JsonIgnore
     private List<Evento> eventos = new ArrayList<>();
 
     public Organizador() {}

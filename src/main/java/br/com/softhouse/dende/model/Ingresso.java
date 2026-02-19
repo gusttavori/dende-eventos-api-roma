@@ -1,7 +1,6 @@
 package br.com.softhouse.dende.model;
 
 import br.com.softhouse.dende.model.EnumModel.StatusIngresso;
-
 import java.time.LocalDateTime;
 import java.util.Objects;
 
@@ -14,7 +13,6 @@ public class Ingresso {
     private Double valorPago;
     private LocalDateTime dataCompra;
 
-
     public Ingresso(int id, Usuario usuario, Evento evento, Double valorPago) {
         this.id = id;
         this.usuario = usuario;
@@ -23,6 +21,7 @@ public class Ingresso {
         this.statusIngresso = StatusIngresso.ATIVO;
         this.dataCompra = LocalDateTime.now();
     }
+
     public Ingresso(){
     }
 
@@ -74,34 +73,30 @@ public class Ingresso {
         this.dataCompra = dataCompra;
     }
 
-// =========================
     // REGRAS DE NEGÓCIO
-    // =========================
 
-    /**
-     * Cancela o ingresso conforme a User Story
-     * O ingresso só pode ser cancelado se estiver ATIVO
-     */
+    // Cancela o ingresso - O ingresso só pode ser cancelado se estiver ATIVO
     public Double cancelar() {
-
+        // Verifica se o ingresso já está cancelado
         if (this.statusIngresso == StatusIngresso.CANCELADO) {
-            throw new IllegalStateException(
-                    "Ingresso já está cancelado."
-            );
+            // Lança exceção se tentar cancelar um ingresso já cancelado
+            throw new IllegalStateException("Ingresso já está cancelado.");
         }
 
+        // Altera o status do ingresso para CANCELADO
         this.statusIngresso = StatusIngresso.CANCELADO;
-
         // Calcula valor de estorno com base na taxa do evento
+        // Obtém a taxa de cancelamento definida no evento
         double taxa = evento.getTaxaCancelamentoIngresso();
-        return valorPago - (valorPago * taxa);
+        double valorEstorno = valorPago - (valorPago * taxa);
+        System.out.println("Ingresso " + id + " cancelado. Valor pago: " + valorPago + ", Taxa: " + taxa + "%, Estorno: " + valorEstorno);
+        return valorEstorno;
     }
 
-    /**
-     * Verifica se o ingresso é de um evento futuro
-     * Usado para ordenação
-     */
+    // Verifica se o ingresso é de um evento futuro usado para ordenação
     public boolean eventoAindaNaoOcorreu() {
+        // Compara a data de início do evento com a data e hora atual
+        // Retorna verdadeiro se o evento ainda não começou
         return evento.getDataInicio().isAfter(LocalDateTime.now());
     }
 

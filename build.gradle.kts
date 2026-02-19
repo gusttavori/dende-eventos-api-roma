@@ -1,3 +1,5 @@
+import org.gradle.kotlin.dsl.implementation
+
 plugins {
     id("java")
 }
@@ -13,6 +15,9 @@ dependencies {
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     implementation("io.github.lasilva:dendeframework:1.0.1")
+    implementation ("com.fasterxml.jackson.core:jackson-databind:2.15.2")
+    implementation ("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2")
+
 }
 
 tasks.test {

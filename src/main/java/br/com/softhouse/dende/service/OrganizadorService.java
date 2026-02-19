@@ -15,23 +15,22 @@ public class OrganizadorService {
     private final Repositorio repositorio = Repositorio.getInstance();
     private final EventoService eventoService = new EventoService();
 
-    /**
-     * US 2 – Cadastrar Organizador
-     */
+//Cadastrar Organizador
     public Organizador cadastrar(Organizador organizador) {
+        // Verifica se o email já está cadastrado
         if (repositorio.buscarUsuarioPorEmail(organizador.getEmail()) != null) {
             throw new IllegalArgumentException("E-mail já cadastrado!");
         }
 
+        // Gera ID único e salva no repositório
         organizador.setId(repositorio.gerarId());
         repositorio.salvarUsuario(organizador);
         return organizador;
     }
 
-    /**
-     * US 3 – Atualizar Organizador
-     */
+    // Atualizar Organizador
     public Organizador atualizar(String email, Organizador dadosAtualizados) {
+        // Busca o organizador pelo email
         Usuario usuario = repositorio.buscarUsuarioPorEmail(email);
 
         if (!(usuario instanceof Organizador)) {
@@ -40,19 +39,16 @@ public class OrganizadorService {
 
         Organizador organizador = (Organizador) usuario;
 
-        // Atualiza os dados do perfil
-        organizador.alterarPerfil(
-                dadosAtualizados.getNome(),
-                dadosAtualizados.getDataNascimento(),
-                dadosAtualizados.getSexo()
+        // Atualiza os dados do perfil (nome, data nascimento, sexo)
+        organizador.alterarPerfil(dadosAtualizados.getNome(), dadosAtualizados.getDataNascimento(), dadosAtualizados.getSexo()
         );
 
-        // Atualiza senha se fornecida
+        // Atualiza a senha se fornecida
         if (dadosAtualizados.getSenha() != null && !dadosAtualizados.getSenha().isEmpty()) {
             organizador.setSenha(dadosAtualizados.getSenha());
         }
 
-        // Atualiza empresa se fornecida
+        // Atualiza os dados da empresa se fornecidos
         if (dadosAtualizados.getEmpresa() != null) {
             organizador.setEmpresa(dadosAtualizados.getEmpresa());
         }
@@ -60,10 +56,9 @@ public class OrganizadorService {
         return organizador;
     }
 
-    /**
-     * US 5 – Desativar Organizador
-     */
+    // Desativar Organizador
     public void alterarStatus(String email, String status) {
+        // Busca o organizador pelo email
         Usuario usuario = repositorio.buscarUsuarioPorEmail(email);
 
         if (!(usuario instanceof Organizador)) {
@@ -73,7 +68,7 @@ public class OrganizadorService {
         Organizador organizador = (Organizador) usuario;
 
         if ("desativar".equalsIgnoreCase(status)) {
-            // Verifica se tem eventos ativos
+            // Verifica se existem eventos ativos antes de desativar
             List<Evento> eventosAtivos = eventoService.listarEventosPorOrganizador(email).stream()
                     .filter(e -> e.isAtivo() && e.getDataFim().isAfter(LocalDateTime.now()))
                     .collect(Collectors.toList());
@@ -90,16 +85,16 @@ public class OrganizadorService {
         }
     }
 
-    /**
-     * US 4 – Listar Organizadores
-     */
+    // Listar Organizadores
     public List<Organizador> listar() {
+        // Filtra apenas usuários do tipo Organizador
         return repositorio.listarUsuarios().stream()
                 .filter(u -> u instanceof Organizador)
                 .map(u -> (Organizador) u)
                 .collect(Collectors.toList());
     }
 
+    // Busca um organizador pelo email
     public Organizador buscarPorEmail(String email) {
         Usuario usuario = repositorio.buscarUsuarioPorEmail(email);
 

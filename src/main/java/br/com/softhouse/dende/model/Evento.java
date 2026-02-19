@@ -2,11 +2,9 @@ package br.com.softhouse.dende.model;
 
 import br.com.softhouse.dende.model.EnumModel.ModalidadeEvento;
 import br.com.softhouse.dende.model.EnumModel.TipoEvento;
-
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Objects;
-
 
 public class Evento {
 
@@ -18,18 +16,17 @@ public class Evento {
     private LocalDateTime dataInicio;
     private LocalDateTime dataFim;
     private TipoEvento tipoEvento;
-    private ModalidadeEvento modalidade;  // CAMPO ADICIONADO
+    private ModalidadeEvento modalidade;
     private Double precoUnitarioIngresso;
     private Double taxaCancelamentoIngresso;
     private int capacidadeMaxima;
     private String local;
-    private boolean ativo = false;
+    private boolean ativo = false;    // Define o status inicial como falso, evento nasce inativo conforme regra de negócio
     private Evento eventoPrincipal;
 
     public Evento() {
     }
 
-    // Construtor atualizado
     public Evento(
             int id,
             Organizador organizador,
@@ -39,7 +36,7 @@ public class Evento {
             LocalDateTime dataInicio,
             LocalDateTime dataFim,
             TipoEvento tipoEvento,
-            ModalidadeEvento modalidade,  // NOVO PARÂMETRO
+            ModalidadeEvento modalidade,
             Double precoUnitarioIngresso,
             Double taxaCancelamentoIngresso,
             int capacidadeMaxima,
@@ -54,7 +51,7 @@ public class Evento {
         this.dataInicio = dataInicio;
         this.dataFim = dataFim;
         this.tipoEvento = tipoEvento;
-        this.modalidade = modalidade;  // NOVO CAMPO
+        this.modalidade = modalidade;
         this.precoUnitarioIngresso = precoUnitarioIngresso;
         this.taxaCancelamentoIngresso = taxaCancelamentoIngresso;
         this.capacidadeMaxima = capacidadeMaxima;
@@ -181,12 +178,12 @@ public class Evento {
     public void setEventoPrincipal(Evento eventoPrincipal) {
         this.eventoPrincipal = eventoPrincipal;
     }
-    // =========================
+
     // REGRAS DE NEGÓCIO
-    // =========================
 
+    // Valida as regras de negócio para criação/alteração de evento
     public void validarEvento() {
-
+        // Obtém a data e hora atual para comparações
         LocalDateTime agora = LocalDateTime.now();
 
         // Regra: data de início não pode ser anterior à atual
@@ -204,6 +201,7 @@ public class Evento {
         }
 
         // Regra: duração mínima de 30 minutos
+        // Calcula a diferença em minutos entre a data de início e fim
         long duracao = Duration.between(dataInicio, dataFim).toMinutes();
         if (duracao < 30) {
             throw new IllegalArgumentException(
@@ -212,23 +210,22 @@ public class Evento {
         }
     }
 
-    //Ativa o evento
+    // Ativa o evento alterando o status para verdadeiro
     public void ativar() {
         this.ativo = true;
     }
 
-    //Desativa o evento
+    // Desativa o evento alterando o status para falso
     public void desativar() {
         this.ativo = false;
     }
 
-    /**
-     * Verifica se o evento está acontecendo agora
-     * Usado para bloquear desativação do organizador
-     */
+
+     // Verifica se o evento está acontecendo agora
+     // Usado para bloquear desativação do organizador
     public boolean estaEmExecucao() {
         LocalDateTime agora = LocalDateTime.now();
-        return agora.isAfter(dataInicio) && agora.isBefore(dataFim);
+        return agora.isAfter(dataInicio) && agora.isBefore(dataFim);// Retorna verdadeiro se a data atual estiver entre o início e o fim do evento
     }
 
     @Override
@@ -255,5 +252,4 @@ public class Evento {
                 ", ativo=" + ativo +
                 '}';
     }
-
 }
