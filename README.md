@@ -50,7 +50,7 @@ Este projeto depende do framework educacional:
 
 **Integrantes do Time:**
 
-1. ____________________________________
+1. Carlos Patrick de Aguiar Lima Costa
 2. ____________________________________
 3. ____________________________________
 4. ____________________________________
