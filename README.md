@@ -51,10 +51,10 @@ Este projeto depende do framework educacional:
 **Integrantes do Time:**
 
 1. Carlos Patrick de Aguiar Lima Costa
-2. ____________________________________
-3. ____________________________________
-4. ____________________________________
-5. ____________________________________
+2. Ryan Filipe Sousa Motta Santana
+3. Bruno Silva Lima
+4. Gustavo Ricardo Moreira Silva
+5. Rafyc Lisboa Maia Santos
 
 ---
 
