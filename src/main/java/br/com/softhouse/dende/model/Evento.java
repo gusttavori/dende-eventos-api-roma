@@ -221,8 +221,8 @@ public class Evento {
     }
 
 
-     // Verifica se o evento está acontecendo agora
-     // Usado para bloquear desativação do organizador
+    // Verifica se o evento está acontecendo agora
+    // Usado para bloquear desativação do organizador
     public boolean estaEmExecucao() {
         LocalDateTime agora = LocalDateTime.now();
         return agora.isAfter(dataInicio) && agora.isBefore(dataFim);// Retorna verdadeiro se a data atual estiver entre o início e o fim do evento

@@ -3,56 +3,86 @@ package br.com.softhouse.dende.controllers;
 import br.com.dende.softhouse.annotations.Controller;
 import br.com.dende.softhouse.annotations.request.*;
 import br.com.dende.softhouse.process.route.ResponseEntity;
-import br.com.softhouse.dende.model.Ingresso;
+import br.com.softhouse.dende.dto.IngressoDTO;
+import br.com.softhouse.dende.mappers.IngressoMapper;
 import br.com.softhouse.dende.service.IngressoService;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
+// indica que esta classe é um controller (componente que recebe requisições HTTP)
 @Controller
+// define o caminho base para todas as rotas deste controller (vazio = raiz)
 @RequestMapping
 public class IngressoController {
-    // Cria uma instância do service
+
+    // cria uma instância do serviço de ingresso para delegar as operações
     private final IngressoService service = new IngressoService();
 
+    // mapeia requisições POST para o caminho "/usuarios/{email}/eventos/{eventoId}/ingressos"
     @PostMapping(path = "/usuarios/{email}/eventos/{eventoId}/ingressos")
-    // Recebe o email do usuário e o ID do evento como parâmetros de path
-    public ResponseEntity<List<Ingresso>> comprar(
+    public ResponseEntity<List<IngressoDTO>> comprar(
+            // extrai o valor da variável "email" do caminho da URL
             @PathVariable(parameter = "email") String email,
+            // extrai o valor da variável "eventoId" do caminho da URL
             @PathVariable(parameter = "eventoId") int eventoId
     ) {
         try {
-            // Chama o service para comprar o ingresso e retorna a lista de ingressos gerados
-            List<Ingresso> ingressos = service.comprarIngresso(email, eventoId);
-            // Retorna status 201 com a lista de ingressos
+            // chama o serviço para comprar ingresso e obtém a lista de ingressos comprados
+            List<IngressoDTO> ingressos = service.comprarIngresso(email, eventoId).stream()
+                    .map(IngressoMapper::toDTO) // converte cada ingresso para DTO
+                    .collect(Collectors.toList()); // coleta os DTOs em uma lista
+            // retorna status 201 (Created) com a lista de ingressos no corpo
             return ResponseEntity.status(201, ingressos);
         } catch (IllegalArgumentException | IllegalStateException e) {
-            // Se houver erro (usuário não encontrado, evento inativo, etc), retorna status 400
+            // captura exceções de:
+            // - usuário não encontrado
+            // - evento não encontrado
+            // - evento inativo
+            // - capacidade esgotada
+            // - evento já realizado
+            // retorna status 400 (Bad Request) com corpo vazio
             return ResponseEntity.status(400, null);
         }
     }
 
+    // mapeia requisições POST para o caminho "/ingressos/{id}/cancelar"
     @PostMapping(path = "/ingressos/{id}/cancelar")
-    // Recebe o ID do ingresso como parâmetro de path
-    public ResponseEntity<String> cancelar(@PathVariable(parameter = "id") int id) {
+    public ResponseEntity<String> cancelar(
+            // extrai o valor da variável "id" do caminho da URL
+            @PathVariable(parameter = "id") int id
+    ) {
         try {
-            // Chama o service para cancelar o ingresso
+            // chama o serviço para cancelar o ingresso pelo ID
             service.cancelarIngresso(id);
-            // Retorna mensagem de sucesso
+            // retorna status 200 (OK) com mensagem de sucesso
             return ResponseEntity.ok("Ingresso cancelado com sucesso");
         } catch (IllegalArgumentException | IllegalStateException e) {
-            // Se houver erro (ingresso não encontrado ou já cancelado), retorna status 400 com a mensagem
+            // captura exceções de:
+            // - ingresso não encontrado
+            // - evento já realizado
+            // - ingresso já cancelado
+            // retorna status 400 (Bad Request) com a mensagem de erro
             return ResponseEntity.status(400, e.getMessage());
         }
     }
 
+    // mapeia requisições GET para o caminho "/usuarios/{email}/ingressos"
     @GetMapping(path = "/usuarios/{email}/ingressos")
-    // Recebe o email do usuário como parâmetro de path
-    public ResponseEntity<List<Ingresso>> listar(@PathVariable(parameter = "email") String email) {
+    public ResponseEntity<List<IngressoDTO>> listar(
+            // extrai o valor da variável "email" do caminho da URL
+            @PathVariable(parameter = "email") String email
+    ) {
         try {
-            // Chama o service para listar os ingressos do usuário e retorna com status 200
-            return ResponseEntity.ok(service.listarIngressosUsuario(email));
+            // chama o serviço para listar ingressos do usuário
+            List<IngressoDTO> ingressos = service.listarIngressosUsuario(email).stream()
+                    .map(IngressoMapper::toDTO) // converte cada ingresso para DTO
+                    .collect(Collectors.toList()); // coleta os DTOs em uma lista
+            // retorna status 200 (OK) com a lista de ingressos
+            return ResponseEntity.ok(ingressos);
         } catch (IllegalArgumentException e) {
-            // Se o usuário não for encontrado, retorna status 404
+            // captura exceção de usuário não encontrado
+            // retorna status 404 (Not Found) com corpo vazio
             return ResponseEntity.status(404, null);
         }
     }

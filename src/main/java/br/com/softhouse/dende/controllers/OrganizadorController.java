@@ -3,85 +3,109 @@ package br.com.softhouse.dende.controllers;
 import br.com.dende.softhouse.annotations.Controller;
 import br.com.dende.softhouse.annotations.request.*;
 import br.com.dende.softhouse.process.route.ResponseEntity;
+import br.com.softhouse.dende.dto.OrganizadorDTO;
+import br.com.softhouse.dende.dto.request.UsuarioRequestDTO;
+import br.com.softhouse.dende.mappers.OrganizadorMapper;
 import br.com.softhouse.dende.model.Organizador;
-import br.com.softhouse.dende.model.Usuario;
 import br.com.softhouse.dende.service.OrganizadorService;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
+// indica que esta classe é um controller (componente que recebe requisições HTTP)
 @Controller
+// define o caminho base para todas as rotas deste controller (vazio = raiz)
 @RequestMapping
 public class OrganizadorController {
 
-    // Cria uma instância do service
+    // cria uma instância do serviço de organizador para delegar as operações
     private final OrganizadorService service = new OrganizadorService();
 
+    // mapeia requisições POST para o caminho "/organizadores"
     @PostMapping(path = "/organizadores")
-    // Recebe os dados do organizador no corpo da requisição
-    public ResponseEntity<Organizador> cadastrar(@RequestBody Organizador organizador) {
+    public ResponseEntity<OrganizadorDTO> cadastrar(@RequestBody UsuarioRequestDTO request) {
+        // valida se a senha foi informada (não nula e não vazia)
+        if (request.getSenha() == null || request.getSenha().trim().isEmpty()) {
+            // retorna status 400 (Bad Request) com corpo vazio
+            return ResponseEntity.status(400, null);
+        }
+
         try {
-            // VALIDAÇÃO: verifica se a senha foi fornecida e não está vazia
-            if (organizador.getSenha() == null || organizador.getSenha().trim().isEmpty()) {
-                // Retorna status 400 se a senha for inválida
-                return ResponseEntity.status(400, null);
-            }
-            // Chama o service para cadastrar e retorna status 201 com o organizador criado
-            return ResponseEntity.status(201, service.cadastrar(organizador));
+            // converte o DTO de requisição para uma entidade Organizador
+            Organizador organizador = OrganizadorMapper.toEntity(request);
+            // chama o serviço para cadastrar o organizador
+            Organizador novo = service.cadastrar(organizador);
+            // retorna status 201 (Created) com o DTO do organizador criado
+            return ResponseEntity.status(201, OrganizadorMapper.toDTO(novo));
         } catch (IllegalArgumentException e) {
-            // Se o email já existir, retorna status 400
+            // captura exceção de email já cadastrado
+            // retorna status 400 (Bad Request) com corpo vazio
             return ResponseEntity.status(400, null);
         }
     }
 
+    // mapeia requisições PUT para o caminho "/organizadores/{email}" onde {email} é variável de caminho
     @PutMapping(path = "/organizadores/{email}")
-    // Metodo que recebe o email como parâmetro de path e os dados atualizados no corpo
-    public ResponseEntity<Organizador> alterar(
+    public ResponseEntity<OrganizadorDTO> alterar(
+            // extrai o valor da variável "email" do caminho da URL
             @PathVariable(parameter = "email") String email,
-            @RequestBody Organizador organizador
+            // extrai o corpo da requisição e converte para UsuarioRequestDTO
+            @RequestBody UsuarioRequestDTO request
     ) {
         try {
-            // Chama o service para atualizar e retorna o organizador atualizado
-            return ResponseEntity.ok(service.atualizar(email, organizador));
+            // tenta atualizar o organizador com os dados fornecidos
+            Organizador organizador = service.atualizar(email, request);
+            // retorna status 200 (OK) com o DTO do organizador atualizado
+            return ResponseEntity.ok(OrganizadorMapper.toDTO(organizador));
         } catch (IllegalArgumentException e) {
-            // Se não encontrar, retorna status 404
+            // captura exceção de organizador não encontrado
+            // retorna status 404 (Not Found) com corpo vazio
             return ResponseEntity.status(404, null);
         }
     }
 
+    // mapeia requisições GET para o caminho "/organizadores"
     @GetMapping(path = "/organizadores")
-    // Metodo que retorna a lista de todos os organizadores
-    public ResponseEntity<List<Organizador>> listar() {
-        // Chama o service para listar e retorna com status 200
-        return ResponseEntity.ok(service.listar());
+    public ResponseEntity<List<OrganizadorDTO>> listar() {
+        // obtém a lista de organizadores do serviço, converte cada um para DTO e coleta em lista
+        List<OrganizadorDTO> organizadores = service.listar().stream()
+                .map(OrganizadorMapper::toDTO) // aplica o mapper para cada organizador
+                .collect(Collectors.toList()); // coleta o resultado em uma lista
+        // retorna status 200 (OK) com a lista de DTOs no corpo
+        return ResponseEntity.ok(organizadores);
     }
 
+    // mapeia requisições GET para o caminho "/organizadores/{email}" onde {email} é variável de caminho
     @GetMapping(path = "/organizadores/{email}")
-    // recebe o email como parâmetro de path
-    public ResponseEntity<Organizador> visualizar(@PathVariable(parameter = "email") String email) {
+    public ResponseEntity<OrganizadorDTO> visualizar(@PathVariable(parameter = "email") String email) {
         try {
-            // Chama o service para buscar o organizador pelo email
+            // tenta buscar o organizador pelo email
             Organizador organizador = service.buscarPorEmail(email);
-            // Retorna o organizador encontrado com status 200
-            return ResponseEntity.ok(organizador);
+            // retorna status 200 (OK) com o DTO do organizador
+            return ResponseEntity.ok(OrganizadorMapper.toDTO(organizador));
         } catch (IllegalArgumentException e) {
-            // Se não encontrar, retorna status 404
+            // captura exceção de organizador não encontrado
+            // retorna status 404 (Not Found) com corpo vazio
             return ResponseEntity.status(404, null);
         }
     }
 
+    // mapeia requisições PATCH para o caminho "/organizadores/{email}/{status}"
     @PatchMapping(path = "/organizadores/{email}/{status}")
-    // Function que recebe o email e o status como parâmetros de path
     public ResponseEntity<String> alterarStatus(
+            // extrai o valor da variável "email" do caminho da URL
             @PathVariable(parameter = "email") String email,
+            // extrai o valor da variável "status" do caminho da URL (ativar/desativar)
             @PathVariable(parameter = "status") String status
     ) {
         try {
-            // Chama o service para alterar o status do organizador
+            // tenta alterar o status do organizador
             service.alterarStatus(email, status);
-            // Retorna mensagem de sucesso
+            // retorna status 200 (OK) com mensagem de sucesso
             return ResponseEntity.ok("Status alterado com sucesso");
         } catch (IllegalArgumentException | IllegalStateException e) {
-            // Se houver erro (organizador não encontrado ou com eventos ativos), retorna status 400 com a mensagem
+            // captura exceções de organizador não encontrado, status inválido ou eventos ativos
+            // retorna status 400 (Bad Request) com a mensagem de erro
             return ResponseEntity.status(400, e.getMessage());
         }
     }

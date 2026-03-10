@@ -3,95 +3,125 @@ package br.com.softhouse.dende.controllers;
 import br.com.dende.softhouse.annotations.Controller;
 import br.com.dende.softhouse.annotations.request.*;
 import br.com.dende.softhouse.process.route.ResponseEntity;
+import br.com.softhouse.dende.dto.UsuarioDTO;
+import br.com.softhouse.dende.dto.request.UsuarioRequestDTO;
+import br.com.softhouse.dende.mappers.UsuarioMapper;
 import br.com.softhouse.dende.model.ReativacaoRequest;
 import br.com.softhouse.dende.model.Usuario;
 import br.com.softhouse.dende.model.UsuarioComum;
 import br.com.softhouse.dende.service.UsuarioService;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+// indica que esta classe é um controller (componente que recebe requisições HTTP)
 @Controller
+// define o caminho base para todas as rotas deste controller
 @RequestMapping
 public class UsuarioController {
 
-    // Cria uma instância do service
+    // cria uma instância do serviço de usuário para delegar as operações
     private final UsuarioService usuarioService = new UsuarioService();
 
+    // mapeia requisições POST para o caminho "/usuarios"
     @PostMapping(path = "/usuarios")
-    // Metodo que recebe os dados do usuário comum no corpo da requisição e retorna o usuário criado
-    public ResponseEntity<UsuarioComum> cadastrar(@RequestBody UsuarioComum usuario) {
-        // VALIDAÇÃO: verifica se a senha foi fornecida e não está vazia
-        if (usuario.getSenha() == null || usuario.getSenha().trim().isEmpty()) {
-            // Retorna status 400 (Bad Request) se a senha for inválida
+    public ResponseEntity<UsuarioDTO> cadastrar(@RequestBody UsuarioRequestDTO usuarioRequest) {
+        // valida se a senha foi informada (não nula e não vazia)
+        if (usuarioRequest.getSenha() == null || usuarioRequest.getSenha().trim().isEmpty()) {
+            // retorna status 400 (Bad Request) com corpo vazio
             return ResponseEntity.status(400, null);
         }
 
-        // Chama o service para cadastrar o usuário com os dados fornecidos
+        // chama o serviço para cadastrar um novo usuário comum com os dados fornecidos
         UsuarioComum novo = usuarioService.cadastrarUsuarioComum(
-                usuario.getNome(),
-                usuario.getDataNascimento(),
-                usuario.getSexo(),
-                usuario.getEmail(),
-                usuario.getSenha()
+                usuarioRequest.getNome(),
+                usuarioRequest.getDataNascimento(),
+                usuarioRequest.getSexo(),
+                usuarioRequest.getEmail(),
+                usuarioRequest.getSenha()
         );
-        // Retorna status 201 (Created) com o usuário criado no corpo da resposta
-        return ResponseEntity.status(201, novo);
+
+        // retorna status 201 (Created) com o DTO do usuário criado no corpo da resposta
+        return ResponseEntity.status(201, UsuarioMapper.toDTO(novo));
     }
 
+    // mapeia requisições PUT para o caminho "/usuarios/{email}" onde {email} é uma variável de caminho
     @PutMapping(path = "/usuarios/{email}")
-    // Mrtodo que recebe o email como parâmetro de path e os dados atualizados no corpo da requisição
-    public ResponseEntity<Usuario> alterar(
+    public ResponseEntity<UsuarioDTO> alterar(
+            // extrai o valor da variável "email" do caminho da URL
             @PathVariable(parameter = "email") String email,
-            @RequestBody UsuarioComum usuario
+            // extrai o corpo da requisição e converte para UsuarioRequestDTO
+            @RequestBody UsuarioRequestDTO usuarioRequest
     ) {
         try {
-            // Chama o service para atualizar o usuário com os dados fornecidos
-            usuarioService.atualizarUsuario(email, usuario);
-            // Retorna status 200 (OK) com o usuário atualizado
-            return ResponseEntity.ok(usuarioService.buscarPorEmail(email));
+            // tenta atualizar o usuário com os dados fornecidos
+            usuarioService.atualizarUsuario(email, usuarioRequest);
+            // busca o usuário atualizado pelo email
+            Usuario usuario = usuarioService.buscarPorEmail(email);
+            // retorna status 200 (OK) com o DTO do usuário atualizado
+            return ResponseEntity.ok(UsuarioMapper.toDTO(usuario));
         } catch (IllegalArgumentException e) {
-            // Se ocorrer erro (usuário não encontrado), retorna status 404 (Not Found)
+            // captura exceção de usuário não encontrado
+            // retorna status 404 (Not Found) com corpo vazio
             return ResponseEntity.status(404, null);
         }
     }
 
+    // mapeia requisições GET para o caminho "/usuarios"
+    @GetMapping(path = "/usuarios")
+    public ResponseEntity<List<UsuarioDTO>> listarTodos() {
+        // obtém a lista de usuários do serviço, converte cada um para DTO e coleta em uma lista
+        List<UsuarioDTO> usuarios = usuarioService.listarUsuarios().stream()
+                .map(UsuarioMapper::toDTO) // aplica o mapper para cada usuário
+                .collect(Collectors.toList()); // coleta o resultado em uma lista
+        // retorna status 200 (OK) com a lista de DTOs no corpo
+        return ResponseEntity.ok(usuarios);
+    }
+
+    // mapeia requisições GET para o caminho "/usuarios/{id}" onde {id} é uma variável de caminho
     @GetMapping(path = "/usuarios/{id}")
-    // Recebe o ID do usuário como parâmetro de path
-    public ResponseEntity<Usuario> visualizar(@PathVariable(parameter = "id") Integer id) {
+    public ResponseEntity<UsuarioDTO> visualizar(@PathVariable(parameter = "id") Integer id) {
         try {
-            // Chama o service para buscar o usuário pelo ID e retorna com status 200
-            return ResponseEntity.ok(usuarioService.buscarPorId(id));
+            // tenta buscar o usuário pelo ID
+            Usuario usuario = usuarioService.buscarPorId(id);
+            // retorna status 200 (OK) com o DTO do usuário
+            return ResponseEntity.ok(UsuarioMapper.toDTO(usuario));
         } catch (IllegalArgumentException e) {
-            // Se não encontrar, retorna status 404
+            // captura exceção de usuário não encontrado
+            // retorna status 404 (Not Found) com corpo vazio
             return ResponseEntity.status(404, null);
         }
     }
 
+    // mapeia requisições PATCH para o caminho "/usuarios/{id}/{status}"
     @PatchMapping(path = "/usuarios/{id}/{status}")
-    // Metodo que recebe o ID e o status (ativar/desativar) como parâmetros de path
     public ResponseEntity<Void> alterarStatus(
             @PathVariable(parameter = "id") Integer id,
             @PathVariable(parameter = "status") String status
     ) {
         try {
-            // Chama o service para alterar o status do usuário
+            // tenta alterar o status do usuário (ativar/desativar)
             usuarioService.alterarStatus(id, status);
-            // Retorna status 200 com corpo vazio
+            // retorna status 200 (OK) com corpo vazio
             return ResponseEntity.ok(null);
         } catch (IllegalArgumentException e) {
-            // Se ocorrer erro, retorna status 404
+            // captura exceção de usuário não encontrado ou status inválido
+            // retorna status 404 (Not Found) com corpo vazio
             return ResponseEntity.status(404, null);
         }
     }
 
+    // mapeia requisições POST para o caminho "/usuarios/reativar"
     @PostMapping(path = "/usuarios/reativar")
-    // Metodo que recebe as credenciais de reativação no corpo da requisição
     public ResponseEntity<String> reativar(@RequestBody ReativacaoRequest request) {
         try {
-            // Chama o service para reativar o usuário com email e senha fornecidos
+            // tenta reativar o usuário com email e senha fornecidos
             usuarioService.reativar(request.getEmail(), request.getSenha());
-            // Retorna mensagem de sucesso com status 200
+            // retorna status 200 (OK) com mensagem de sucesso
             return ResponseEntity.ok("Usuário reativado com sucesso");
         } catch (IllegalArgumentException e) {
-            // Se as credenciais forem inválidas, retorna status 401 com a mensagem de erro
+            // captura exceção de usuário não encontrado, já ativo ou senha incorreta
+            // retorna status 401 (Unauthorized) com a mensagem de erro
             return ResponseEntity.status(401, e.getMessage());
         }
     }

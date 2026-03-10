@@ -1,6 +1,7 @@
 package br.com.softhouse.dende.service;
 
-import br.com.softhouse.dende.model.Empresa;
+import br.com.softhouse.dende.dto.request.UsuarioRequestDTO;
+import br.com.softhouse.dende.mappers.OrganizadorMapper;
 import br.com.softhouse.dende.model.Evento;
 import br.com.softhouse.dende.model.Organizador;
 import br.com.softhouse.dende.model.Usuario;
@@ -12,100 +13,113 @@ import java.util.stream.Collectors;
 
 public class OrganizadorService {
 
+    // obtém a instância única do repositório (singleton)
     private final Repositorio repositorio = Repositorio.getInstance();
+    // cria uma instância do serviço de eventos para operações relacionadas
     private final EventoService eventoService = new EventoService();
 
-//Cadastrar Organizador
+    // mwtodo para cadastrar um novo organizador
     public Organizador cadastrar(Organizador organizador) {
-        // Verifica se o email já está cadastrado
+        // verifica se já existe um usuário com o email do organizador
         if (repositorio.buscarUsuarioPorEmail(organizador.getEmail()) != null) {
+            // lança exceção se o email já estiver cadastrado
             throw new IllegalArgumentException("E-mail já cadastrado!");
         }
 
-        // Gera ID único e salva no repositório
+        // define um ID automático para o organizador
         organizador.setId(repositorio.gerarId());
+        // salva o organizador no repositório
         repositorio.salvarUsuario(organizador);
+        // retorna o organizador cadastrado
         return organizador;
     }
 
-    // Atualizar Organizador
-    public Organizador atualizar(String email, Organizador dadosAtualizados) {
-        // Busca o organizador pelo email
+    // metodo para atualizar os dados de um organizador
+    public Organizador atualizar(String email, UsuarioRequestDTO dadosAtualizados) {
+        // busca o usuário pelo email no repositório
         Usuario usuario = repositorio.buscarUsuarioPorEmail(email);
 
+        // verifica se o usuário encontrado é do tipo Organizador
         if (!(usuario instanceof Organizador)) {
+            // lança exceção se não for um organizador
             throw new IllegalArgumentException("Organizador não encontrado");
         }
 
+        // faz o cast do usuário para Organizador
         Organizador organizador = (Organizador) usuario;
+        // atualiza os dados do organizador usando o mapper específico
+        OrganizadorMapper.updateEntityFromDTO(dadosAtualizados, organizador);
 
-        // Atualiza os dados do perfil (nome, data nascimento, sexo)
-        organizador.alterarPerfil(dadosAtualizados.getNome(), dadosAtualizados.getDataNascimento(), dadosAtualizados.getSexo()
-        );
-
-        // Atualiza a senha se fornecida
-        if (dadosAtualizados.getSenha() != null && !dadosAtualizados.getSenha().isEmpty()) {
-            organizador.setSenha(dadosAtualizados.getSenha());
-        }
-
-        // Atualiza os dados da empresa se fornecidos
-        if (dadosAtualizados.getEmpresa() != null) {
-            organizador.setEmpresa(dadosAtualizados.getEmpresa());
-        }
-
+        // retorna o organizador atualizado
         return organizador;
     }
 
-    // Desativar Organizador
+    // metodo para ativar ou desativar um organizador
     public void alterarStatus(String email, String status) {
-        // Busca o organizador pelo email
+        // busca o usuário pelo email no repositório
         Usuario usuario = repositorio.buscarUsuarioPorEmail(email);
 
+        // verifica se o usuário encontrado é do tipo Organizador
         if (!(usuario instanceof Organizador)) {
+            // lança exceção se não for um organizador
             throw new IllegalArgumentException("Organizador não encontrado");
         }
 
+        // faz o cast do usuário para Organizador
         Organizador organizador = (Organizador) usuario;
 
+        // verifica se o status é "desativar" (ignorando maiúsculas/minúsculas)
         if ("desativar".equalsIgnoreCase(status)) {
-            // Verifica se existem eventos ativos antes de desativar
+            // lista os eventos ativos do organizador que ainda não terminaram
             List<Evento> eventosAtivos = eventoService.listarEventosPorOrganizador(email).stream()
                     .filter(e -> e.isAtivo() && e.getDataFim().isAfter(LocalDateTime.now()))
                     .collect(Collectors.toList());
 
+            // verifica se existem eventos ativos
             if (!eventosAtivos.isEmpty()) {
+                // impede a desativação se houver eventos ativos
                 throw new IllegalStateException("Organizador possui eventos ativos e não pode ser desativado");
             }
 
+            // desativa o organizador
             organizador.desativar();
+            // verifica se o status é "ativar" (ignorando maiúsculas/minúsculas)
         } else if ("ativar".equalsIgnoreCase(status)) {
+            // ativa o organizador
             organizador.ativar();
         } else {
+            // lança exceção se o status não for válido
             throw new IllegalArgumentException("Status inválido: " + status);
         }
     }
 
-    // Listar Organizadores
+    // metodo para listar todos os organizadores
     public List<Organizador> listar() {
-        // Filtra apenas usuários do tipo Organizador
+        // filtra todos os usuários do repositório, mantendo apenas os do tipo Organizador
         return repositorio.listarUsuarios().stream()
-                .filter(u -> u instanceof Organizador)
-                .map(u -> (Organizador) u)
-                .collect(Collectors.toList());
+                .filter(u -> u instanceof Organizador)  // mantém apenas Organizadores
+                .map(u -> (Organizador) u)               // faz o cast para Organizador
+                .collect(Collectors.toList());           // coleta o resultado em uma lista
     }
 
-    // Busca um organizador pelo email
+    // metodo para buscar um organizador pelo email
     public Organizador buscarPorEmail(String email) {
+        // busca o usuário pelo email no repositório
         Usuario usuario = repositorio.buscarUsuarioPorEmail(email);
 
+        // verifica se o usuário foi encontrado
         if (usuario == null) {
+            // lança exceção se não existir
             throw new IllegalArgumentException("Organizador não encontrado");
         }
 
+        // verifica se o usuário encontrado é do tipo Organizador
         if (!(usuario instanceof Organizador)) {
+            // lança exceção se não for um organizador
             throw new IllegalArgumentException("Usuário não é um organizador");
         }
 
+        // retorna o organizador encontrado (fazendo o cast)
         return (Organizador) usuario;
     }
 }
