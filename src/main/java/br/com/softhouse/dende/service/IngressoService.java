@@ -1,8 +1,12 @@
 package br.com.softhouse.dende.service;
 
+import br.com.softhouse.dende.exceptions.BusinessRuleException;
+import br.com.softhouse.dende.exceptions.EntityNotFoundException;
 import br.com.softhouse.dende.model.*;
 import br.com.softhouse.dende.model.EnumModel.StatusIngresso;
-import br.com.softhouse.dende.repositories.Repositorio;
+import br.com.softhouse.dende.repositories.EventoRepository;
+import br.com.softhouse.dende.repositories.IngressoRepository;
+import br.com.softhouse.dende.repositories.UsuarioRepository;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -11,74 +15,89 @@ import java.util.stream.Collectors;
 
 public class IngressoService {
 
-    private final Repositorio repositorio = Repositorio.getInstance();
+    private final IngressoRepository ingressoRepository = new IngressoRepository();
+    private final UsuarioRepository usuarioRepository = new UsuarioRepository();
+    private final EventoRepository eventoRepository = new EventoRepository();
 
-    // Processa a compra de um ingresso para um evento
     public List<Ingresso> comprarIngresso(String emailUsuario, int eventoId) {
         System.out.println("\n=== COMPRANDO INGRESSO ===");
         System.out.println("Email usuário: " + emailUsuario);
         System.out.println("Evento ID: " + eventoId);
 
-        // Busca o usuário e o evento
-        Usuario usuario = repositorio.buscarUsuarioPorEmail(emailUsuario);
-        Evento evento = repositorio.buscarEventoPorId(eventoId);
+        // Busca o usuário
+        Usuario usuario = usuarioRepository.findByEmail(emailUsuario)
+                .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado"));
 
-        // Validações (código omitido para brevidade)
+        // Busca o evento
+        Evento evento = eventoRepository.findById(eventoId)
+                .orElseThrow(() -> new EntityNotFoundException("Evento", eventoId));
+
+        // Validações
+        if (!evento.isAtivo()) {
+            throw new BusinessRuleException("Evento está inativo");
+        }
+
+        if (evento.getDataFim().isBefore(LocalDateTime.now())) {
+            throw new BusinessRuleException("Evento já realizado");
+        }
+
+        // Verifica capacidade
+        int ingressosVendidos = ingressoRepository.findByEventoId(eventoId).size();
+        if (ingressosVendidos >= evento.getCapacidadeMaxima()) {
+            throw new BusinessRuleException("Evento está com capacidade esgotada");
+        }
 
         List<Ingresso> ingressosComprados = new ArrayList<>();
 
         // Cria o ingresso para o evento principal
         Ingresso ingressoPrincipal = new Ingresso(
-                repositorio.gerarId(),
+                0,  // ID será gerado pelo repositório
                 usuario,
                 evento,
                 evento.getPrecoUnitarioIngresso()
         );
-        repositorio.salvarIngresso(ingressoPrincipal);
-        ingressosComprados.add(ingressoPrincipal);
-        System.out.println("Ingresso principal criado: " + ingressoPrincipal.getId());
+        Ingresso savedPrincipal = ingressoRepository.save(ingressoPrincipal);
+        ingressosComprados.add(savedPrincipal);
+        System.out.println("Ingresso principal criado: " + savedPrincipal.getId());
 
         // Se o evento tiver um evento principal, cria ingresso também para ele
         if (evento.getEventoPrincipal() != null) {
             Evento eventoPrincipal = evento.getEventoPrincipal();
             Ingresso ingressoSecundario = new Ingresso(
-                    repositorio.gerarId(),
+                    0,
                     usuario,
                     eventoPrincipal,
                     eventoPrincipal.getPrecoUnitarioIngresso()
             );
-            repositorio.salvarIngresso(ingressoSecundario);
-            ingressosComprados.add(ingressoSecundario);
-            System.out.println("Ingresso do evento principal criado: " + ingressoSecundario.getId());
+            Ingresso savedSecundario = ingressoRepository.save(ingressoSecundario);
+            ingressosComprados.add(savedSecundario);
+            System.out.println("Ingresso do evento principal criado: " + savedSecundario.getId());
         }
 
         System.out.println("Total de ingressos comprados: " + ingressosComprados.size());
         return ingressosComprados;
     }
 
-    // Cancela um ingresso existente
     public void cancelarIngresso(int ingressoId) {
-        Ingresso ingresso = repositorio.buscarIngressoPorId(ingressoId);
+        Ingresso ingresso = ingressoRepository.findById(ingressoId)
+                .orElseThrow(() -> new EntityNotFoundException("Ingresso", ingressoId));
 
-        if (ingresso == null) {
-            throw new IllegalArgumentException("Ingresso não encontrado");
+        // Verifica se o evento já passou
+        if (ingresso.getEvento().getDataFim().isBefore(LocalDateTime.now())) {
+            throw new BusinessRuleException("Não é possível cancelar ingresso de evento já realizado");
         }
 
         ingresso.cancelar();
+
+        // Atualiza o status no banco
+        ingressoRepository.updateStatus(ingressoId, StatusIngresso.CANCELADO);
     }
 
-    // Lista todos os ingressos de um usuário, ordenados conforme regras de negócio
     public List<Ingresso> listarIngressosUsuario(String emailUsuario) {
-        // Busca o usuário pelo email
-        Usuario usuario = repositorio.buscarUsuarioPorEmail(emailUsuario);
+        Usuario usuario = usuarioRepository.findByEmail(emailUsuario)
+                .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado"));
 
-        if (usuario == null) {
-            throw new IllegalArgumentException("Usuário não encontrado");
-        }
-
-        // Filtra ingressos do usuário e aplica ordenação
-        // OBS: Me perdi aqui e acabei apelando pro chat
-        return repositorio.listarIngressosPorUsuario(usuario).stream()
+        return ingressoRepository.findByUsuarioId(usuario.getId()).stream()
                 .sorted((i1, i2) -> {
                     // Primeiro critério: eventos ativos e não realizados vêm antes
                     boolean i1Ativo = i1.getStatusIngresso() == StatusIngresso.ATIVO &&
