@@ -3,126 +3,128 @@ package br.com.softhouse.dende.controllers;
 import br.com.dende.softhouse.annotations.Controller;
 import br.com.dende.softhouse.annotations.request.*;
 import br.com.dende.softhouse.process.route.ResponseEntity;
+import br.com.softhouse.dende.dto.ApiResponse;
+import br.com.softhouse.dende.dto.StatusChangeRequestDTO;
 import br.com.softhouse.dende.dto.UsuarioDTO;
-import br.com.softhouse.dende.dto.request.UsuarioRequestDTO;
-import br.com.softhouse.dende.mappers.UsuarioMapper;
-import br.com.softhouse.dende.model.ReativacaoRequest;
-import br.com.softhouse.dende.model.Usuario;
-import br.com.softhouse.dende.model.UsuarioComum;
-import br.com.softhouse.dende.service.UsuarioService;
+import br.com.softhouse.dende.exceptions.EntidadeNaoEncontradaException;
+import br.com.softhouse.dende.exceptions.RegraDeNegocioException;
+import br.com.softhouse.dende.repositories.UsuarioRepository;
+import br.com.softhouse.dende.repositories.util.ConfigProperties;
+import br.com.softhouse.dende.repositories.util.ConnectionPool;
+import br.com.softhouse.dende.services.UsuarioService;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
-// indica que esta classe é um controller (componente que recebe requisições HTTP)
 @Controller
-// define o caminho base para todas as rotas deste controller
-@RequestMapping
+@RequestMapping(path = "/usuarios")
 public class UsuarioController {
 
-    // cria uma instância do serviço de usuário para delegar as operações
-    private final UsuarioService usuarioService = new UsuarioService();
+    private final UsuarioService usuarioService;
 
-    // mapeia requisições POST para o caminho "/usuarios"
-    @PostMapping(path = "/usuarios")
-    public ResponseEntity<UsuarioDTO> cadastrar(@RequestBody UsuarioRequestDTO usuarioRequest) {
-        // valida se a senha foi informada (não nula e não vazia)
-        if (usuarioRequest.getSenha() == null || usuarioRequest.getSenha().trim().isEmpty()) {
-            // retorna status 400 (Bad Request) com corpo vazio
-            return ResponseEntity.status(400, null);
-        }
-
-        // chama o serviço para cadastrar um novo usuário comum com os dados fornecidos
-        UsuarioComum novo = usuarioService.cadastrarUsuarioComum(
-                usuarioRequest.getNome(),
-                usuarioRequest.getDataNascimento(),
-                usuarioRequest.getSexo(),
-                usuarioRequest.getEmail(),
-                usuarioRequest.getSenha()
-        );
-
-        // retorna status 201 (Created) com o DTO do usuário criado no corpo da resposta
-        return ResponseEntity.status(201, UsuarioMapper.toDTO(novo));
+    public UsuarioController(UsuarioService usuarioService) {
+        this.usuarioService = usuarioService;
     }
 
-    // mapeia requisições PUT para o caminho "/usuarios/{email}" onde {email} é uma variável de caminho
-    @PutMapping(path = "/usuarios/{email}")
-    public ResponseEntity<UsuarioDTO> alterar(
-            // extrai o valor da variável "email" do caminho da URL
-            @PathVariable(parameter = "email") String email,
-            // extrai o corpo da requisição e converte para UsuarioRequestDTO
-            @RequestBody UsuarioRequestDTO usuarioRequest
-    ) {
+    public UsuarioController() {
+        ConfigProperties config = new ConfigProperties();
+        ConnectionPool connectionPool = new ConnectionPool(config);
+        UsuarioRepository usuarioRepository = new UsuarioRepository(connectionPool);
+        this.usuarioService = new UsuarioService(usuarioRepository);
+    }
+
+    @PostMapping
+    public ResponseEntity<ApiResponse<UsuarioDTO>> cadastrar(@RequestBody UsuarioDTO dto) {
         try {
-            // tenta atualizar o usuário com os dados fornecidos
-            usuarioService.atualizarUsuario(email, usuarioRequest);
-            // busca o usuário atualizado pelo email
-            Usuario usuario = usuarioService.buscarPorEmail(email);
-            // retorna status 200 (OK) com o DTO do usuário atualizado
-            return ResponseEntity.ok(UsuarioMapper.toDTO(usuario));
-        } catch (IllegalArgumentException e) {
-            // captura exceção de usuário não encontrado
-            // retorna status 404 (Not Found) com corpo vazio
-            return ResponseEntity.status(404, null);
+            UsuarioDTO response = usuarioService.cadastrar(dto);
+            ApiResponse<UsuarioDTO> apiResponse = new ApiResponse<>(
+                    response, "Usuário cadastrado com sucesso", 201
+            );
+            return ResponseEntity.status(201, apiResponse);
+        } catch (RegraDeNegocioException e) {
+            ApiResponse<UsuarioDTO> apiResponse = new ApiResponse<>(
+                    e.getMessage(), 400, "Bad Request"
+            );
+            return ResponseEntity.status(400, apiResponse);
+        } catch (Exception e) {
+            ApiResponse<UsuarioDTO> apiResponse = new ApiResponse<>(
+                    "Erro interno: " + e.getMessage(), 500, "Internal Server Error"
+            );
+            return ResponseEntity.status(500, apiResponse);
         }
     }
 
-    // mapeia requisições GET para o caminho "/usuarios"
-    @GetMapping(path = "/usuarios")
-    public ResponseEntity<List<UsuarioDTO>> listarTodos() {
-        // obtém a lista de usuários do serviço, converte cada um para DTO e coleta em uma lista
-        List<UsuarioDTO> usuarios = usuarioService.listarUsuarios().stream()
-                .map(UsuarioMapper::toDTO) // aplica o mapper para cada usuário
-                .collect(Collectors.toList()); // coleta o resultado em uma lista
-        // retorna status 200 (OK) com a lista de DTOs no corpo
-        return ResponseEntity.ok(usuarios);
-    }
-
-    // mapeia requisições GET para o caminho "/usuarios/{id}" onde {id} é uma variável de caminho
-    @GetMapping(path = "/usuarios/{id}")
-    public ResponseEntity<UsuarioDTO> visualizar(@PathVariable(parameter = "id") Integer id) {
+    @PutMapping(path = "/{usuarioId}")
+    public ResponseEntity<ApiResponse<UsuarioDTO>> alterar(
+            @PathVariable(parameter = "usuarioId") Long id,
+            @RequestBody UsuarioDTO dto) {
         try {
-            // tenta buscar o usuário pelo ID
-            Usuario usuario = usuarioService.buscarPorId(id);
-            // retorna status 200 (OK) com o DTO do usuário
-            return ResponseEntity.ok(UsuarioMapper.toDTO(usuario));
-        } catch (IllegalArgumentException e) {
-            // captura exceção de usuário não encontrado
-            // retorna status 404 (Not Found) com corpo vazio
-            return ResponseEntity.status(404, null);
+            UsuarioDTO response = usuarioService.atualizar(id, dto);
+            ApiResponse<UsuarioDTO> apiResponse = new ApiResponse<>(
+                    response, "Usuário atualizado com sucesso", 200
+            );
+            return ResponseEntity.ok(apiResponse);
+        } catch (EntidadeNaoEncontradaException e) {
+            ApiResponse<UsuarioDTO> apiResponse = new ApiResponse<>(
+                    e.getMessage(), 404, "Not Found"
+            );
+            return ResponseEntity.status(404, apiResponse);
+        } catch (RegraDeNegocioException e) {
+            ApiResponse<UsuarioDTO> apiResponse = new ApiResponse<>(
+                    e.getMessage(), 400, "Bad Request"
+            );
+            return ResponseEntity.status(400, apiResponse);
         }
     }
 
-    // mapeia requisições PATCH para o caminho "/usuarios/{id}/{status}"
-    @PatchMapping(path = "/usuarios/{id}/{status}")
-    public ResponseEntity<Void> alterarStatus(
-            @PathVariable(parameter = "id") Integer id,
-            @PathVariable(parameter = "status") String status
-    ) {
+    @GetMapping(path = "/{usuarioId}")
+    public ResponseEntity<ApiResponse<UsuarioDTO>> visualizar(@PathVariable(parameter = "usuarioId") Long id) {
         try {
-            // tenta alterar o status do usuário (ativar/desativar)
-            usuarioService.alterarStatus(id, status);
-            // retorna status 200 (OK) com corpo vazio
-            return ResponseEntity.ok(null);
-        } catch (IllegalArgumentException e) {
-            // captura exceção de usuário não encontrado ou status inválido
-            // retorna status 404 (Not Found) com corpo vazio
-            return ResponseEntity.status(404, null);
+            UsuarioDTO response = usuarioService.buscarPorId(id);
+            ApiResponse<UsuarioDTO> apiResponse = new ApiResponse<>(
+                    response, "Usuário encontrado", 200
+            );
+            return ResponseEntity.ok(apiResponse);
+        } catch (EntidadeNaoEncontradaException e) {
+            ApiResponse<UsuarioDTO> apiResponse = new ApiResponse<>(
+                    e.getMessage(), 404, "Not Found"
+            );
+            return ResponseEntity.status(404, apiResponse);
         }
     }
 
-    // mapeia requisições POST para o caminho "/usuarios/reativar"
-    @PostMapping(path = "/usuarios/reativar")
-    public ResponseEntity<String> reativar(@RequestBody ReativacaoRequest request) {
+    @PatchMapping(path = "/{usuarioId}/{status}")
+    public ResponseEntity<ApiResponse<UsuarioDTO>> alterarStatus(
+            @PathVariable(parameter = "usuarioId") Long id,
+            @PathVariable(parameter = "status") boolean ativar,
+            @RequestBody StatusChangeRequestDTO request) {
         try {
-            // tenta reativar o usuário com email e senha fornecidos
-            usuarioService.reativar(request.getEmail(), request.getSenha());
-            // retorna status 200 (OK) com mensagem de sucesso
-            return ResponseEntity.ok("Usuário reativado com sucesso");
-        } catch (IllegalArgumentException e) {
-            // captura exceção de usuário não encontrado, já ativo ou senha incorreta
-            // retorna status 401 (Unauthorized) com a mensagem de erro
-            return ResponseEntity.status(401, e.getMessage());
+            if (request == null || request.getSenha() == null || request.getSenha().trim().isEmpty()) {
+                ApiResponse<UsuarioDTO> apiResponse = new ApiResponse<>(
+                        "Senha é obrigatória", 400, "Bad Request"
+                );
+                return ResponseEntity.status(400, apiResponse);
+            }
+
+            UsuarioDTO response;
+            String operacao;
+
+            if (ativar) {
+                response = usuarioService.ativarComSenha(id, request.getSenha());
+                operacao = "ativado";
+            } else {
+                response = usuarioService.desativarComSenha(id, request.getSenha());
+                operacao = "desativado";
+            }
+
+            ApiResponse<UsuarioDTO> apiResponse = new ApiResponse<>(
+                    response, "Usuário " + operacao + " com sucesso", 200
+            );
+            return ResponseEntity.ok(apiResponse);
+        } catch (RegraDeNegocioException e) {
+            int status = e.getMessage().contains("Senha incorreta") ? 401 : 400;
+            String erro = e.getMessage().contains("Senha incorreta") ? "Unauthorized" : "Bad Request";
+            ApiResponse<UsuarioDTO> apiResponse = new ApiResponse<>(
+                    e.getMessage(), status, erro
+            );
+            return ResponseEntity.status(status, apiResponse);
         }
     }
 }

@@ -1,255 +1,153 @@
 package br.com.softhouse.dende.model;
 
-import br.com.softhouse.dende.model.EnumModel.ModalidadeEvento;
-import br.com.softhouse.dende.model.EnumModel.TipoEvento;
+import br.com.softhouse.dende.model.enums.ModalidadeEvento;
+import br.com.softhouse.dende.model.enums.TipoEvento;
+
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.Objects;
+import java.time.format.DateTimeFormatter;
 
+// Classe de modelo para representar um evento no sistema
 public class Evento {
 
-    private int id;
-    private Organizador organizador;
+    // Atributos do evento
+    private Long id;
+    private Long organizadorId;
     private String nome;
-    private String paginaWeb;
+    private String pagina;
     private String descricao;
     private LocalDateTime dataInicio;
-    private LocalDateTime dataFim;
+    private LocalDateTime dataFinal;
     private TipoEvento tipoEvento;
+    private Long eventoPrincipalId;
     private ModalidadeEvento modalidade;
-    private Double precoUnitarioIngresso;
-    private Double taxaCancelamentoIngresso;
-    private int capacidadeMaxima;
+    private Integer capacidadeMaxima;
     private String local;
-    private boolean ativo = false;    // Define o status inicial como falso, evento nasce inativo conforme regra de negócio
-    private Evento eventoPrincipal;
+    private Boolean ativo;
+    private Double precoIngresso;
+    private Boolean estornaCancelamento;
+    private Double taxaEstorno;
+    private Integer ingressosVendidos;
 
     public Evento() {
+        this.ativo = false;              // Por padrão, o evento é criado como inativo
+        this.ingressosVendidos = 0;     // Inicializa a contagem de ingressos vendidos
+        this.estornaCancelamento = true;// Por padrão, o evento permite estorno em caso de cancelamento
+        this.taxaEstorno = 0.0;         // Por padrão, a taxa de estorno é 0%, ou seja, reembolsa o valor total pago
     }
 
-    public Evento(
-            int id,
-            Organizador organizador,
-            String nome,
-            String paginaWeb,
-            String descricao,
-            LocalDateTime dataInicio,
-            LocalDateTime dataFim,
-            TipoEvento tipoEvento,
-            ModalidadeEvento modalidade,
-            Double precoUnitarioIngresso,
-            Double taxaCancelamentoIngresso,
-            int capacidadeMaxima,
-            String local,
-            Evento eventoPrincipal
-    ) {
-        this.id = id;
-        this.organizador = organizador;
-        this.nome = nome;
-        this.paginaWeb = paginaWeb;
-        this.descricao = descricao;
-        this.dataInicio = dataInicio;
-        this.dataFim = dataFim;
-        this.tipoEvento = tipoEvento;
-        this.modalidade = modalidade;
-        this.precoUnitarioIngresso = precoUnitarioIngresso;
-        this.taxaCancelamentoIngresso = taxaCancelamentoIngresso;
-        this.capacidadeMaxima = capacidadeMaxima;
-        this.local = local;
-        this.eventoPrincipal = eventoPrincipal;
-    }
+    // Getters e Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public int getId() {
-        return id;
-    }
+    public Long getOrganizadorId() { return organizadorId; }
+    public void setOrganizadorId(Long organizadorId) { this.organizadorId = organizadorId; }
 
-    public void setId(int id) {
-        this.id = id;
-    }
+    public String getNome() { return nome; }
+    public void setNome(String nome) { this.nome = nome; }
 
-    public Organizador getOrganizador() {
-        return organizador;
-    }
+    public String getPagina() { return pagina; }
+    public void setPagina(String pagina) { this.pagina = pagina; }
 
-    public void setOrganizador(Organizador organizador) {
-        this.organizador = organizador;
-    }
+    public String getDescricao() { return descricao; }
+    public void setDescricao(String descricao) { this.descricao = descricao; }
 
-    public String getNome() {
-        return nome;
-    }
+    public LocalDateTime getDataInicio() { return dataInicio; }
+    public void setDataInicio(LocalDateTime dataInicio) { this.dataInicio = dataInicio; }
 
-    public void setNome(String nome) {
-        this.nome = nome;
-    }
+    public LocalDateTime getDataFinal() { return dataFinal; }
+    public void setDataFinal(LocalDateTime dataFinal) { this.dataFinal = dataFinal; }
 
-    public String getPaginaWeb() {
-        return paginaWeb;
-    }
+    public TipoEvento getTipoEvento() { return tipoEvento; }
+    public void setTipoEvento(TipoEvento tipoEvento) { this.tipoEvento = tipoEvento; }
 
-    public void setPaginaWeb(String paginaWeb) {
-        this.paginaWeb = paginaWeb;
-    }
+    public Long getEventoPrincipalId() { return eventoPrincipalId; }
+    public void setEventoPrincipalId(Long eventoPrincipalId) { this.eventoPrincipalId = eventoPrincipalId; }
 
-    public String getDescricao() {
-        return descricao;
-    }
+    public ModalidadeEvento getModalidade() { return modalidade; }
+    public void setModalidade(ModalidadeEvento modalidade) { this.modalidade = modalidade; }
 
-    public void setDescricao(String descricao) {
-        this.descricao = descricao;
-    }
+    public Integer getCapacidadeMaxima() { return capacidadeMaxima; }
+    public void setCapacidadeMaxima(Integer capacidadeMaxima) { this.capacidadeMaxima = capacidadeMaxima; }
 
-    public LocalDateTime getDataInicio() {
-        return dataInicio;
-    }
+    public String getLocal() { return local; }
+    public void setLocal(String local) { this.local = local; }
 
-    public void setDataInicio(LocalDateTime dataInicio) {
-        this.dataInicio = dataInicio;
-    }
+    public Boolean getAtivo() { return ativo; }
+    public void setAtivo(Boolean ativo) { this.ativo = ativo; }
 
-    public LocalDateTime getDataFim() {
-        return dataFim;
-    }
+    public Double getPrecoIngresso() { return precoIngresso; }
+    public void setPrecoIngresso(Double precoIngresso) { this.precoIngresso = precoIngresso; }
 
-    public void setDataFim(LocalDateTime dataFim) {
-        this.dataFim = dataFim;
-    }
+    public Boolean getEstornaCancelamento() { return estornaCancelamento; }
+    public void setEstornaCancelamento(Boolean estornaCancelamento) { this.estornaCancelamento = estornaCancelamento; }
 
-    public TipoEvento getTipoEvento() {
-        return tipoEvento;
-    }
+    public Double getTaxaEstorno() { return taxaEstorno; }
+    public void setTaxaEstorno(Double taxaEstorno) { this.taxaEstorno = taxaEstorno; }
 
-    public void setTipoEvento(TipoEvento tipoEvento) {
-        this.tipoEvento = tipoEvento;
-    }
+    public Integer getIngressosVendidos() { return ingressosVendidos; }
+    public void setIngressosVendidos(Integer ingressosVendidos) { this.ingressosVendidos = ingressosVendidos; }
 
-    public ModalidadeEvento getModalidade() {
-        return modalidade;
-    }
-
-    public void setModalidade(ModalidadeEvento modalidade) {
-        this.modalidade = modalidade;
-    }
-
-    public Double getPrecoUnitarioIngresso() {
-        return precoUnitarioIngresso;
-    }
-
-    public void setPrecoUnitarioIngresso(Double precoUnitarioIngresso) {
-        this.precoUnitarioIngresso = precoUnitarioIngresso;
-    }
-
-    public Double getTaxaCancelamentoIngresso() {
-        return taxaCancelamentoIngresso;
-    }
-
-    public void setTaxaCancelamentoIngresso(Double taxaCancelamentoIngresso) {
-        this.taxaCancelamentoIngresso = taxaCancelamentoIngresso;
-    }
-
-    public int getCapacidadeMaxima() {
-        return capacidadeMaxima;
-    }
-
-    public void setCapacidadeMaxima(int capacidadeMaxima) {
-        this.capacidadeMaxima = capacidadeMaxima;
-    }
-
-    public String getLocal() {
-        return local;
-    }
-
-    public void setLocal(String local) {
-        this.local = local;
-    }
-
-    public boolean isAtivo() {
-        return ativo;
-    }
-
-    public void setAtivo(boolean ativo) {
-        this.ativo = ativo;
-    }
-
-    public Evento getEventoPrincipal() {
-        return eventoPrincipal;
-    }
-
-    public void setEventoPrincipal(Evento eventoPrincipal) {
-        this.eventoPrincipal = eventoPrincipal;
-    }
-
-    // REGRAS DE NEGÓCIO
-
-    // Valida as regras de negócio para criação/alteração de evento
-    public void validarEvento() {
-        // Obtém a data e hora atual para comparações
+    // Metodo para validar as datas do evento
+    public boolean validarDatas() {
         LocalDateTime agora = LocalDateTime.now();
-
-        // Regra: data de início não pode ser anterior à atual
-        if (dataInicio.isBefore(agora)) {
-            throw new IllegalArgumentException(
-                    "A data de início não pode ser anterior à data atual."
-            );
-        }
-
-        // Regra: data fim não pode ser anterior ao início
-        if (dataFim.isBefore(dataInicio)) {
-            throw new IllegalArgumentException(
-                    "A data de fim não pode ser anterior à data de início."
-            );
-        }
-
-        // Regra: duração mínima de 30 minutos
-        // Calcula a diferença em minutos entre a data de início e fim
-        long duracao = Duration.between(dataInicio, dataFim).toMinutes();
-        if (duracao < 30) {
-            throw new IllegalArgumentException(
-                    "O evento deve ter duração mínima de 30 minutos."
-            );
-        }
+        if (dataInicio.isBefore(agora)) return false;
+        if (dataFinal.isBefore(dataInicio)) return false;
+        long duracaoMinutos = Duration.between(dataInicio, dataFinal).toMinutes();
+        return duracaoMinutos >= 30;
     }
 
-    // Ativa o evento alterando o status para verdadeiro
-    public void ativar() {
-        this.ativo = true;
+    // Metodo para verificar se o evento tem ingressos disponíveis
+    public boolean temIngressosDisponiveis() {
+        return ingressosVendidos < capacidadeMaxima;
     }
 
-    // Desativa o evento alterando o status para falso
-    public void desativar() {
-        this.ativo = false;
+    // Metodo para calcular o número de ingressos disponíveis
+    public int ingressosDisponiveis() {
+        return capacidadeMaxima - ingressosVendidos;
     }
 
+    // Metodo para verificar se o evento já aconteceu
+    public boolean eventoJaAconteceu() {
+        return dataFinal.isBefore(LocalDateTime.now());
+    }
 
-    // Verifica se o evento está acontecendo agora
-    // Usado para bloquear desativação do organizador
-    public boolean estaEmExecucao() {
+    // Metodo para verificar se o evento está em andamento
+    public boolean eventoEmAndamento() {
         LocalDateTime agora = LocalDateTime.now();
-        return agora.isAfter(dataInicio) && agora.isBefore(dataFim);// Retorna verdadeiro se a data atual estiver entre o início e o fim do evento
+        return agora.isAfter(dataInicio) && agora.isBefore(dataFinal);
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Evento)) return false;
-        Evento evento = (Evento) o;
-        return id == evento.id;
+    // Metodo para verificar se o evento pode ser ativado (deve ter datas válidas e não estar ativo)
+    public boolean podeSerAtivado() {
+        return validarDatas() && !ativo;
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(id);
+    // Metodo para calcular o valor do reembolso em caso de cancelamento, considerando a taxa de estorno
+    public Double calcularReembolso(Double valorPago) {
+        if (!estornaCancelamento) return 0.0;
+        return valorPago * (1 - taxaEstorno / 100);
     }
 
-    @Override
-    public String toString() {
-        return "Evento{" +
-                "id=" + id +
-                ", nome='" + nome + '\'' +
-                ", dataInicio=" + dataInicio +
-                ", dataFim=" + dataFim +
-                ", local='" + local + '\'' +
-                ", ativo=" + ativo +
-                '}';
+    // Metodo para vender um ingresso, incrementando a contagem de ingressos vendidos
+    public void venderIngresso() {
+        if (temIngressosDisponiveis()) {
+            this.ingressosVendidos++;
+        }
+    }
+
+    // Metodo para cancelar um ingresso, decrementando a contagem de ingressos vendidos (se houver ingressos vendidos)
+    public void cancelarIngresso() {
+        if (this.ingressosVendidos > 0) {
+            this.ingressosVendidos--;
+        }
+    }
+
+    // Metodo para formatar o período do evento em uma string legível
+    public String getPeriodoFormatado() {
+        // Formata as datas de início e fim do evento usando o padrão "dd/MM/yyyy HH:mm"
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm ");
+        // Retorna uma string no formato "dataInicio até dataFinal", por exemplo: "01/01/2024 18:00 até 01/01/2024 22:00"
+        return dataInicio.format(formatter) + " até " + dataFinal.format(formatter);
     }
 }

@@ -1,131 +1,61 @@
 package br.com.softhouse.dende.model;
 
+import br.com.softhouse.dende.model.enums.Sexo;
 import java.time.LocalDate;
 import java.time.Period;
-import java.util.Objects;
 
-public abstract class Usuario {
+// Classe de modelo para representar um usuário do sistema
 
-    private Integer id;
+public class Usuario {
+
+    // Atributos do usuário
+    private Long id;
     private String nome;
     private LocalDate dataNascimento;
-    private String sexo;
+    private Sexo sexo;
     private String email;
     private String senha;
-    protected boolean statusUsuario = true;
+    private Boolean ativo;
 
-    protected Usuario(Integer id, String nome, LocalDate dataNascimento,
-                      String sexo, String email, String senha) {
-        this.id = id;
+    public Usuario() {
+        this.ativo = true; // Por padrão, o usuário é criado como ativo
+    }
+
+    public Usuario(String nome, LocalDate dataNascimento, Sexo sexo, String email, String senha) {
         this.nome = nome;
         this.dataNascimento = dataNascimento;
         this.sexo = sexo;
         this.email = email;
         this.senha = senha;
+        this.ativo = true;
     }
 
-    protected Usuario() {}
+    // Getters e Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public Integer getId() { return id; }
     public String getNome() { return nome; }
+    public void setNome(String nome) { this.nome = nome; }
+
     public LocalDate getDataNascimento() { return dataNascimento; }
-    public String getSexo() { return sexo; }
+    public void setDataNascimento(LocalDate dataNascimento) { this.dataNascimento = dataNascimento; }
+
+    public Sexo getSexo() { return sexo; }
+    public void setSexo(Sexo sexo) { this.sexo = sexo; }
+
     public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+
     public String getSenha() { return senha; }
+    public void setSenha(String senha) { this.senha = senha; }
 
-    public boolean isAtivo() { return statusUsuario; }
+    public Boolean getAtivo() { return ativo; }
+    public void setAtivo(Boolean ativo) { this.ativo = ativo; }
 
-    public void alterarPerfil(String nome, LocalDate dataNascimento, String sexo) {
-        this.nome = nome;
-        this.dataNascimento = dataNascimento;
-        this.sexo = sexo;
-    }
-
-    public void desativar() {
-        this.statusUsuario = false;
-    }
-
-    public void ativar() {
-        this.statusUsuario = true;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public void setNome(String nome) {
-        this.nome = nome;
-    }
-
-    public void setDataNascimento(LocalDate dataNascimento) {
-        this.dataNascimento = dataNascimento;
-    }
-
-    public void setSexo(String sexo) {
-        this.sexo = sexo;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public void setSenha(String senha) {
-        this.senha = senha;
-    }
-
-    public boolean isStatusUsuario() {
-        return statusUsuario;
-    }
-
-    public void setStatusUsuario(boolean statusUsuario) {
-        this.statusUsuario = statusUsuario;
-    }
-
-    // Reativar a conta validando a senha fornecida
-    public boolean reativar(String senhaInformada) {
-        System.out.println("\n--- DENTRO DO MÉTODO reativar (Usuario) ---");
-        System.out.println("Senha armazenada (this.senha): '" + this.senha + "'");
-        System.out.println("Senha informada (parâmetro): '" + senhaInformada + "'");
-        System.out.println("Comparação: " + this.senha.equals(senhaInformada));
-
-        // Verifica se a senha fornecida é igual à senha armazenada
-        if (this.senha.equals(senhaInformada)) {
-            System.out.println("SENHA CORRETA! Ativando usuário...");
-            ativar();
-            return true;
-        }
-        System.out.println("SENHA INCORRETA!");
-        return false;
-    }
-
-    // Calcula e retorna a idade do usuário em anos, meses e dias
+    //Metodo para calcular a idade do usuário
     public String getIdade() {
-        if (dataNascimento == null) return "Não informada"; // Se a data de nascimento for nula, retorna uma mensagem padrão
-        Period p = Period.between(dataNascimento, LocalDate.now()); // Calcula o período entre a data de nascimento e a data atual
-        return p.getYears() + " anos, " + p.getMonths() + " meses";
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Usuario)) return false;
-        Usuario usuario = (Usuario) o;
-        return Objects.equals(id, usuario.id) &&
-                Objects.equals(email, usuario.email);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, email);
-    }
-
-
-    @Override
-    public String toString() {
-        return "Nome: " + nome +
-                "\nEmail: " + email +
-                "\nSexo: " + sexo +
-                "\nNascimento: " + dataNascimento +
-                "\nStatus: " + (statusUsuario ? "Ativo" : "Inativo");
+        if (dataNascimento == null) return "";
+        Period periodo = Period.between(dataNascimento, LocalDate.now());
+        return periodo.getYears() + " anos, " + periodo.getMonths() + " meses, " + periodo.getDays() + " dias";
     }
 }

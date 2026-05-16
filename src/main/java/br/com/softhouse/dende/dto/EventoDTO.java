@@ -1,66 +1,91 @@
 package br.com.softhouse.dende.dto;
 
-import br.com.softhouse.dende.model.EnumModel.ModalidadeEvento;
-import br.com.softhouse.dende.model.EnumModel.TipoEvento;
+import br.com.softhouse.dende.model.enums.ModalidadeEvento;
+import br.com.softhouse.dende.model.enums.TipoEvento;
+
 import java.time.LocalDateTime;
 
+/**
+ * Classe DTO unificada para receber e enviar dados completos de um evento na API
+ */
 public class EventoDTO {
-    private int id;
+    private Long id;
+    private Long organizadorId;
     private String nome;
-    private String paginaWeb;
+    private String pagina;
     private String descricao;
     private LocalDateTime dataInicio;
-    private LocalDateTime dataFim;
+    private LocalDateTime dataFinal;
+    private String periodo;
     private TipoEvento tipoEvento;
+    private Long eventoPrincipalId;
     private ModalidadeEvento modalidade;
-    private Double precoUnitarioIngresso;
-    private Double taxaCancelamentoIngresso;
-    private int capacidadeMaxima;
-    private int ingressosVendidos;
-    private int ingressosDisponiveis;
+    private Integer capacidadeMaxima;
     private String local;
-    private boolean ativo;
-    private String organizadorNome;
-    private String organizadorEmail;
-    private Integer eventoPrincipalId;
-    private String eventoPrincipalNome;
+    private Boolean ativo;
+    private Double precoIngresso;
+    private Boolean estornaCancelamento;
+    private Double taxaEstorno;
+    private Integer ingressosVendidos;
+    private Integer ingressosDisponiveis;
 
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
+    public EventoDTO() {}
+
+    // Getters e Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public Long getOrganizadorId() { return organizadorId; }
+    public void setOrganizadorId(Long organizadorId) { this.organizadorId = organizadorId; }
+
     public String getNome() { return nome; }
     public void setNome(String nome) { this.nome = nome; }
-    public String getPaginaWeb() { return paginaWeb; }
-    public void setPaginaWeb(String paginaWeb) { this.paginaWeb = paginaWeb; }
+
+    public String getPagina() { return pagina; }
+    public void setPagina(String pagina) { this.pagina = pagina; }
+
     public String getDescricao() { return descricao; }
     public void setDescricao(String descricao) { this.descricao = descricao; }
+
     public LocalDateTime getDataInicio() { return dataInicio; }
     public void setDataInicio(LocalDateTime dataInicio) { this.dataInicio = dataInicio; }
-    public LocalDateTime getDataFim() { return dataFim; }
-    public void setDataFim(LocalDateTime dataFim) { this.dataFim = dataFim; }
+
+    public LocalDateTime getDataFinal() { return dataFinal; }
+    public void setDataFinal(LocalDateTime dataFinal) { this.dataFinal = dataFinal; }
+
+    public String getPeriodo() { return periodo; }
+    public void setPeriodo(String periodo) { this.periodo = periodo; }
+
     public TipoEvento getTipoEvento() { return tipoEvento; }
     public void setTipoEvento(TipoEvento tipoEvento) { this.tipoEvento = tipoEvento; }
+
+    public Long getEventoPrincipalId() { return eventoPrincipalId; }
+    public void setEventoPrincipalId(Long eventoPrincipalId) { this.eventoPrincipalId = eventoPrincipalId; }
+
     public ModalidadeEvento getModalidade() { return modalidade; }
     public void setModalidade(ModalidadeEvento modalidade) { this.modalidade = modalidade; }
-    public Double getPrecoUnitarioIngresso() { return precoUnitarioIngresso; }
-    public void setPrecoUnitarioIngresso(Double precoUnitarioIngresso) { this.precoUnitarioIngresso = precoUnitarioIngresso; }
-    public Double getTaxaCancelamentoIngresso() { return taxaCancelamentoIngresso; }
-    public void setTaxaCancelamentoIngresso(Double taxaCancelamentoIngresso) { this.taxaCancelamentoIngresso = taxaCancelamentoIngresso; }
-    public int getCapacidadeMaxima() { return capacidadeMaxima; }
-    public void setCapacidadeMaxima(int capacidadeMaxima) { this.capacidadeMaxima = capacidadeMaxima; }
-    public int getIngressosVendidos() { return ingressosVendidos; }
-    public void setIngressosVendidos(int ingressosVendidos) { this.ingressosVendidos = ingressosVendidos; }
-    public int getIngressosDisponiveis() { return ingressosDisponiveis; }
-    public void setIngressosDisponiveis(int ingressosDisponiveis) { this.ingressosDisponiveis = ingressosDisponiveis; }
+
+    public Integer getCapacidadeMaxima() { return capacidadeMaxima; }
+    public void setCapacidadeMaxima(Integer capacidadeMaxima) { this.capacidadeMaxima = capacidadeMaxima; }
+
     public String getLocal() { return local; }
     public void setLocal(String local) { this.local = local; }
-    public boolean isAtivo() { return ativo; }
-    public void setAtivo(boolean ativo) { this.ativo = ativo; }
-    public String getOrganizadorNome() { return organizadorNome; }
-    public void setOrganizadorNome(String organizadorNome) { this.organizadorNome = organizadorNome; }
-    public String getOrganizadorEmail() { return organizadorEmail; }
-    public void setOrganizadorEmail(String organizadorEmail) { this.organizadorEmail = organizadorEmail; }
-    public Integer getEventoPrincipalId() { return eventoPrincipalId; }
-    public void setEventoPrincipalId(Integer eventoPrincipalId) { this.eventoPrincipalId = eventoPrincipalId; }
-    public String getEventoPrincipalNome() { return eventoPrincipalNome; }
-    public void setEventoPrincipalNome(String eventoPrincipalNome) { this.eventoPrincipalNome = eventoPrincipalNome; }
+
+    public Boolean getAtivo() { return ativo; }
+    public void setAtivo(Boolean ativo) { this.ativo = ativo; }
+
+    public Double getPrecoIngresso() { return precoIngresso; }
+    public void setPrecoIngresso(Double precoIngresso) { this.precoIngresso = precoIngresso; }
+
+    public Boolean getEstornaCancelamento() { return estornaCancelamento; }
+    public void setEstornaCancelamento(Boolean estornaCancelamento) { this.estornaCancelamento = estornaCancelamento; }
+
+    public Double getTaxaEstorno() { return taxaEstorno; }
+    public void setTaxaEstorno(Double taxaEstorno) { this.taxaEstorno = taxaEstorno; }
+
+    public Integer getIngressosVendidos() { return ingressosVendidos; }
+    public void setIngressosVendidos(Integer ingressosVendidos) { this.ingressosVendidos = ingressosVendidos; }
+
+    public Integer getIngressosDisponiveis() { return ingressosDisponiveis; }
+    public void setIngressosDisponiveis(Integer ingressosDisponiveis) { this.ingressosDisponiveis = ingressosDisponiveis; }
 }

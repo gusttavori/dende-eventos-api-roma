@@ -3,87 +3,127 @@ package br.com.softhouse.dende.controllers;
 import br.com.dende.softhouse.annotations.Controller;
 import br.com.dende.softhouse.annotations.request.*;
 import br.com.dende.softhouse.process.route.ResponseEntity;
-import br.com.softhouse.dende.dto.IngressoDTO;
-import br.com.softhouse.dende.mappers.IngressoMapper;
-import br.com.softhouse.dende.service.IngressoService;
-
+import br.com.softhouse.dende.dto.*;
+import br.com.softhouse.dende.exceptions.EntidadeNaoEncontradaException;
+import br.com.softhouse.dende.exceptions.RegraDeNegocioException;
+import br.com.softhouse.dende.repositories.EventoRepository;
+import br.com.softhouse.dende.repositories.IngressoRepository;
+import br.com.softhouse.dende.repositories.UsuarioRepository;
+import br.com.softhouse.dende.repositories.util.ConfigProperties;
+import br.com.softhouse.dende.repositories.util.ConnectionPool;
+import br.com.softhouse.dende.services.IngressoService;
 import java.util.List;
-import java.util.stream.Collectors;
 
-// indica que esta classe é um controller (componente que recebe requisições HTTP)
 @Controller
-// define o caminho base para todas as rotas deste controller (vazio = raiz)
-@RequestMapping
+@RequestMapping(path = "")
 public class IngressoController {
 
-    // cria uma instância do serviço de ingresso para delegar as operações
-    private final IngressoService service = new IngressoService();
+    private final IngressoService ingressoService;
 
-    // mapeia requisições POST para o caminho "/usuarios/{email}/eventos/{eventoId}/ingressos"
-    @PostMapping(path = "/usuarios/{email}/eventos/{eventoId}/ingressos")
-    public ResponseEntity<List<IngressoDTO>> comprar(
-            // extrai o valor da variável "email" do caminho da URL
-            @PathVariable(parameter = "email") String email,
-            // extrai o valor da variável "eventoId" do caminho da URL
-            @PathVariable(parameter = "eventoId") int eventoId
-    ) {
+    // Injeção de dependência via construtor
+    public IngressoController(IngressoService ingressoService) {
+        this.ingressoService = ingressoService;
+    }
+
+    public IngressoController() {
+        ConfigProperties config = new ConfigProperties();
+        ConnectionPool connectionPool = new ConnectionPool(config);
+        IngressoRepository ingressoRepository = new IngressoRepository(connectionPool);
+        EventoRepository eventoRepository = new EventoRepository(connectionPool);
+        UsuarioRepository usuarioRepository = new UsuarioRepository(connectionPool);
+        this.ingressoService = new IngressoService(ingressoRepository, eventoRepository, usuarioRepository);
+    }
+
+    @PostMapping(path = "/organizadores/{organizadorId}/eventos/{eventoId}/ingressos")
+    public ResponseEntity<ApiResponse<CompraResponseDTO>> comprar(
+            @PathVariable(parameter = "organizadorId") Long organizadorId,
+            @PathVariable(parameter = "eventoId") Long eventoId,
+            @RequestBody CompraRequestDTO request) {
         try {
-            // chama o serviço para comprar ingresso e obtém a lista de ingressos comprados
-            List<IngressoDTO> ingressos = service.comprarIngresso(email, eventoId).stream()
-                    .map(IngressoMapper::toDTO) // converte cada ingresso para DTO
-                    .collect(Collectors.toList()); // coleta os DTOs em uma lista
-            // retorna status 201 (Created) com a lista de ingressos no corpo
-            return ResponseEntity.status(201, ingressos);
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            // captura exceções de:
-            // - usuário não encontrado
-            // - evento não encontrado
-            // - evento inativo
-            // - capacidade esgotada
-            // - evento já realizado
-            // retorna status 400 (Bad Request) com corpo vazio
-            return ResponseEntity.status(400, null);
+            if (request == null || request.getUsuarioEmail() == null || request.getUsuarioEmail().trim().isEmpty()) {
+                throw new RegraDeNegocioException("Email do usuário é obrigatório");
+            }
+
+            CompraResponseDTO compraResponse = ingressoService.comprar(organizadorId, eventoId, request);
+            ApiResponse<CompraResponseDTO> apiResponse = new ApiResponse<>(
+                    compraResponse, "Compra processada com sucesso", 201
+            );
+            return ResponseEntity.status(201, apiResponse);
+        } catch (RegraDeNegocioException e) {
+            ApiResponse<CompraResponseDTO> apiResponse = new ApiResponse<>(
+                    e.getMessage(), 400, "Bad Request"
+            );
+            return ResponseEntity.status(400, apiResponse);
+        } catch (EntidadeNaoEncontradaException e) {
+            ApiResponse<CompraResponseDTO> apiResponse = new ApiResponse<>(
+                    e.getMessage(), 404, "Not Found"
+            );
+            return ResponseEntity.status(404, apiResponse);
+        } catch (Exception e) {
+            ApiResponse<CompraResponseDTO> apiResponse = new ApiResponse<>(
+                    "Erro interno ao processar compra: " + e.getMessage(),
+                    500, "Internal Server Error"
+            );
+            return ResponseEntity.status(500, apiResponse);
         }
     }
 
-    // mapeia requisições POST para o caminho "/ingressos/{id}/cancelar"
-    @PostMapping(path = "/ingressos/{id}/cancelar")
-    public ResponseEntity<String> cancelar(
-            // extrai o valor da variável "id" do caminho da URL
-            @PathVariable(parameter = "id") int id
-    ) {
+    @PostMapping(path = "/usuarios/{usuarioId}/ingressos/{ingressoId}")
+    public ResponseEntity<ApiResponse<CancelamentoResponseDTO>> cancelar(
+            @PathVariable(parameter = "usuarioId") Long usuarioId,
+            @PathVariable(parameter = "ingressoId") Long ingressoId) {
         try {
-            // chama o serviço para cancelar o ingresso pelo ID
-            service.cancelarIngresso(id);
-            // retorna status 200 (OK) com mensagem de sucesso
-            return ResponseEntity.ok("Ingresso cancelado com sucesso");
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            // captura exceções de:
-            // - ingresso não encontrado
-            // - evento já realizado
-            // - ingresso já cancelado
-            // retorna status 400 (Bad Request) com a mensagem de erro
-            return ResponseEntity.status(400, e.getMessage());
+            if (usuarioId == null || ingressoId == null) {
+                throw new RegraDeNegocioException("ID do usuário e do ingresso são obrigatórios");
+            }
+
+            CancelamentoResponseDTO cancelamentoResponse = ingressoService.cancelar(usuarioId, ingressoId);
+            ApiResponse<CancelamentoResponseDTO> apiResponse = new ApiResponse<>(
+                    cancelamentoResponse, "Cancelamento realizado com sucesso", 200
+            );
+            return ResponseEntity.ok(apiResponse);
+        } catch (RegraDeNegocioException e) {
+            ApiResponse<CancelamentoResponseDTO> apiResponse = new ApiResponse<>(
+                    e.getMessage(), 400, "Bad Request"
+            );
+            return ResponseEntity.status(400, apiResponse);
+        } catch (EntidadeNaoEncontradaException e) {
+            ApiResponse<CancelamentoResponseDTO> apiResponse = new ApiResponse<>(
+                    e.getMessage(), 404, "Not Found"
+            );
+            return ResponseEntity.status(404, apiResponse);
+        } catch (Exception e) {
+            ApiResponse<CancelamentoResponseDTO> apiResponse = new ApiResponse<>(
+                    "Erro interno ao cancelar ingresso: " + e.getMessage(),
+                    500, "Internal Server Error"
+            );
+            return ResponseEntity.status(500, apiResponse);
         }
     }
 
-    // mapeia requisições GET para o caminho "/usuarios/{email}/ingressos"
-    @GetMapping(path = "/usuarios/{email}/ingressos")
-    public ResponseEntity<List<IngressoDTO>> listar(
-            // extrai o valor da variável "email" do caminho da URL
-            @PathVariable(parameter = "email") String email
-    ) {
+    @GetMapping(path = "/usuarios/{usuarioId}/ingressos")
+    public ResponseEntity<ApiResponse<List<IngressoDTO>>> listar(@PathVariable(parameter = "usuarioId") Long usuarioId) {
         try {
-            // chama o serviço para listar ingressos do usuário
-            List<IngressoDTO> ingressos = service.listarIngressosUsuario(email).stream()
-                    .map(IngressoMapper::toDTO) // converte cada ingresso para DTO
-                    .collect(Collectors.toList()); // coleta os DTOs em uma lista
-            // retorna status 200 (OK) com a lista de ingressos
-            return ResponseEntity.ok(ingressos);
-        } catch (IllegalArgumentException e) {
-            // captura exceção de usuário não encontrado
-            // retorna status 404 (Not Found) com corpo vazio
-            return ResponseEntity.status(404, null);
+            if (usuarioId == null) {
+                throw new RegraDeNegocioException("ID do usuário é obrigatório");
+            }
+
+            List<IngressoDTO> ingressos = ingressoService.listarPorUsuario(usuarioId);
+            ApiResponse<List<IngressoDTO>> apiResponse = new ApiResponse<>(
+                    ingressos, "Ingressos listados com sucesso", 200
+            );
+            return ResponseEntity.ok(apiResponse);
+        } catch (EntidadeNaoEncontradaException e) {
+            ApiResponse<List<IngressoDTO>> apiResponse = new ApiResponse<>(
+                    e.getMessage(), 404, "Not Found"
+            );
+            return ResponseEntity.status(404, apiResponse);
+        } catch (Exception e) {
+            ApiResponse<List<IngressoDTO>> apiResponse = new ApiResponse<>(
+                    "Erro interno ao listar ingressos: " + e.getMessage(),
+                    500, "Internal Server Error"
+            );
+            return ResponseEntity.status(500, apiResponse);
         }
     }
 }

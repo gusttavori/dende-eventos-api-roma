@@ -1,125 +1,100 @@
 package br.com.softhouse.dende.model;
 
-import br.com.softhouse.dende.model.EnumModel.StatusIngresso;
+import br.com.softhouse.dende.model.enums.StatusIngresso;
 import java.time.LocalDateTime;
-import java.util.Objects;
+import java.time.format.DateTimeFormatter;
+import java.util.UUID;
 
+// Classe de modelo para representar um ingresso no sistema
 public class Ingresso {
 
-    private int id;
-    private Usuario usuario;
-    private Evento evento;
-    private StatusIngresso statusIngresso;
-    private Double valorPago;
+    // Atributos do ingresso
+    private Long id;
+    private Long usuarioId;
+    private Long eventoId;
+    private Long eventoVinculadoId;
+    private String codigo;
     private LocalDateTime dataCompra;
+    private Double valorPago;
+    private StatusIngresso status;
+    private Boolean ingressoPrincipal;
 
-    public Ingresso(int id, Usuario usuario, Evento evento, Double valorPago) {
-        this.id = id;
-        this.usuario = usuario;
-        this.evento = evento;
-        this.valorPago = valorPago;
-        this.statusIngresso = StatusIngresso.ATIVO;
-        this.dataCompra = LocalDateTime.now();
+    public Ingresso() {
+        this.dataCompra = LocalDateTime.now();  // Define a data de compra como o momento atual
+        this.status = StatusIngresso.PENDENTE;  // Define o status inicial do ingresso como PENDENTE
+        this.ingressoPrincipal = true;          // Por padrão, o ingresso é considerado principal
+        this.codigo = gerarCodigo();            // Gera um código único para o ingresso usando UUID
     }
 
-    public Ingresso(){
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public Usuario getUsuario() {
-        return usuario;
-    }
-
-    public void setUsuario(Usuario usuario) {
-        this.usuario = usuario;
-    }
-
-    public Evento getEvento() {
-        return evento;
-    }
-
-    public void setEvento(Evento evento) {
-        this.evento = evento;
-    }
-
-    public StatusIngresso getStatusIngresso() {
-        return statusIngresso;
-    }
-
-    public void setStatusIngresso(StatusIngresso statusIngresso) {
-        this.statusIngresso = statusIngresso;
-    }
-
-    public Double getValorPago() {
-        return valorPago;
-    }
-
-    public void setValorPago(Double valorPago) {
+    public Ingresso(Long usuarioId, Long eventoId, Double valorPago) {
+        this();
+        this.usuarioId = usuarioId;
+        this.eventoId = eventoId;
         this.valorPago = valorPago;
     }
 
-    public LocalDateTime getDataCompra() {
-        return dataCompra;
+    // Getters e Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public Long getUsuarioId() { return usuarioId; }
+    public void setUsuarioId(Long usuarioId) { this.usuarioId = usuarioId; }
+
+    public Long getEventoId() { return eventoId; }
+    public void setEventoId(Long eventoId) { this.eventoId = eventoId; }
+
+    public Long getEventoVinculadoId() { return eventoVinculadoId; }
+    public void setEventoVinculadoId(Long eventoVinculadoId) { this.eventoVinculadoId = eventoVinculadoId; }
+
+    public String getCodigo() { return codigo; }
+    public void setCodigo(String codigo) { this.codigo = codigo; }
+
+    public LocalDateTime getDataCompra() { return dataCompra; }
+    public void setDataCompra(LocalDateTime dataCompra) { this.dataCompra = dataCompra; }
+
+    public Double getValorPago() { return valorPago; }
+    public void setValorPago(Double valorPago) { this.valorPago = valorPago; }
+
+    public StatusIngresso getStatus() { return status; }
+    public void setStatus(StatusIngresso status) { this.status = status; }
+
+    public Boolean getIngressoPrincipal() { return ingressoPrincipal; }
+    public void setIngressoPrincipal(Boolean ingressoPrincipal) { this.ingressoPrincipal = ingressoPrincipal; }
+
+    // Metodo para gerar um código único para o ingresso usando UUID
+    private String gerarCodigo() {
+        return UUID.randomUUID().toString().toUpperCase().replace("-", "").substring(0, 12);
     }
 
-    public void setDataCompra(LocalDateTime dataCompra) {
-        this.dataCompra = dataCompra;
+    // Metodos para gerenciar o status do ingresso
+    public boolean podeSerCancelado() {
+        return status.podeSerCancelado();
     }
 
-    // REGRAS DE NEGÓCIO
-
-    // Cancela o ingresso - O ingresso só pode ser cancelado se estiver ATIVO
-    public Double cancelar() {
-        // Verifica se o ingresso já está cancelado
-        if (this.statusIngresso == StatusIngresso.CANCELADO) {
-            // Lança exceção se tentar cancelar um ingresso já cancelado
-            throw new IllegalStateException("Ingresso já está cancelado.");
+    // Metodo para cancelar o ingresso, alterando seu status para CANCELADO
+    public void cancelar() {
+        if (podeSerCancelado()) {
+            this.status = StatusIngresso.CANCELADO;
         }
-
-        // Altera o status do ingresso para CANCELADO
-        this.statusIngresso = StatusIngresso.CANCELADO;
-        // Calcula valor de estorno com base na taxa do evento
-        // Obtém a taxa de cancelamento definida no evento
-        double taxa = evento.getTaxaCancelamentoIngresso();
-        double valorEstorno = valorPago - (valorPago * taxa);
-        System.out.println("Ingresso " + id + " cancelado. Valor pago: " + valorPago + ", Taxa: " + taxa + "%, Estorno: " + valorEstorno);
-        return valorEstorno;
     }
 
-    // Verifica se o ingresso é de um evento futuro usado para ordenação
-    public boolean eventoAindaNaoOcorreu() {
-        // Compara a data de início do evento com a data e hora atual
-        // Retorna verdadeiro se o evento ainda não começou
-        return evento.getDataInicio().isAfter(LocalDateTime.now());
+    // Metodo para confirmar o pagamento do ingresso, alterando seu status para ATIVO
+    public void confirmarPagamento() {
+        if (status == StatusIngresso.PENDENTE) {
+            this.status = StatusIngresso.ATIVO;
+        }
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Ingresso)) return false;
-        Ingresso ingresso = (Ingresso) o;
-        return id == ingresso.id;
+    // Metodo para reembolsar o ingresso, alterando seu status para REEMBOLSADO
+    public void reembolsar() {
+        if (status == StatusIngresso.ATIVO || status == StatusIngresso.CANCELADO) {
+            this.status = StatusIngresso.REEMBOLSADO;
+        }
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(id);
-    }
-
-    @Override
-    public String toString() {
-        return "Ingresso{" +
-                "id=" + id +
-                ", evento=" + evento.getNome() +
-                ", status=" + statusIngresso +
-                ", valorPago=" + valorPago +
-                '}';
+    // Metodo para formatar a data de compra do ingresso em um formato legível
+    public String getDataCompraFormatada() {
+        // Formata a data de compra usando o padrão "dd/MM/yyyy HH:mm"
+        return dataCompra.format(DateTimeFormatter.ofPattern(" dd/MM/yyyy HH:mm "));
     }
 }

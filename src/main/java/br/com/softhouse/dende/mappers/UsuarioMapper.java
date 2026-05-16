@@ -1,63 +1,73 @@
 package br.com.softhouse.dende.mappers;
 
 import br.com.softhouse.dende.dto.UsuarioDTO;
-import br.com.softhouse.dende.dto.request.UsuarioRequestDTO;
-import br.com.softhouse.dende.model.Organizador;
 import br.com.softhouse.dende.model.Usuario;
-import br.com.softhouse.dende.model.UsuarioComum;
 
-// Classe responsável por converter entre entidades Usuario e DTOs (Data Transfer Objects)
+/**
+ * Mapper para converter entre as classes de modelo (entidade) e as classes de DTO (Data Transfer Object).
+ * Esta classe é responsável por transformar os dados entre as camadas de apresentação (DTOs) e a camada de negócio (entidades).
+ */
+
+// Mapper para converter entre Usuario, UsuarioDTO
 public class UsuarioMapper {
 
-    // Converte um UsuarioRequestDTO para uma entidade UsuarioComum
-    public static UsuarioComum toEntity(UsuarioRequestDTO dto) {
-        // verifica se o DTO é nulo e retorna nulo se for
-        if (dto == null) return null;
+    private UsuarioMapper() {}
 
-        // cria uma nova instância de UsuarioComum
-        UsuarioComum usuario = new UsuarioComum();
-        // copia os dados do DTO para a entidade
+    // Converte um UsuarioDTO para um objeto Usuario (entidade)
+    public static Usuario toEntity(UsuarioDTO dto) {
+        if (dto == null) return null; // Verificação de null para evitar NullPointerException
+
+        // Criar um novo objeto Usuario e preencher seus campos com os dados do DTO
+        Usuario usuario = new Usuario();
         usuario.setNome(dto.getNome());
         usuario.setDataNascimento(dto.getDataNascimento());
         usuario.setSexo(dto.getSexo());
         usuario.setEmail(dto.getEmail());
         usuario.setSenha(dto.getSenha());
-        // retorna a entidade criada
+        usuario.setAtivo(dto.getAtivo() != null ? dto.getAtivo() : true);
+
         return usuario;
     }
 
-    // Converte uma entidade Usuario para um UsuarioDTO
+    // Converte um objeto Usuario (entidade) para um UsuarioDTO
     public static UsuarioDTO toDTO(Usuario usuario) {
-        // verifica se a entidade é nula e retorna nulo se for
         if (usuario == null) return null;
 
-        // cria uma nova instância de UsuarioDTO
         UsuarioDTO dto = new UsuarioDTO();
-        // copia os dados da entidade para o DTO
         dto.setId(usuario.getId());
         dto.setNome(usuario.getNome());
         dto.setDataNascimento(usuario.getDataNascimento());
         dto.setIdade(usuario.getIdade());
         dto.setSexo(usuario.getSexo());
         dto.setEmail(usuario.getEmail());
-        dto.setAtivo(usuario.isAtivo());
-        // verifica o tipo do usuário (Organizador ou Comum) e define no DTO
-        dto.setTipo(usuario instanceof Organizador ? "ORGANIZADOR" : "COMUM");
+        dto.setAtivo(usuario.getAtivo());
+        // Senha NÃO é copiada para o DTO (segurança)
 
-        // retorna o DTO criado
         return dto;
     }
 
-    // Atualiza uma entidade Usuario existente com dados de um UsuarioRequestDTO
-    public static void updateEntityFromDTO(UsuarioRequestDTO dto, Usuario usuario) {
-        // verifica se o DTO ou a entidade são nulos e interrompe o metodo se forem
-        if (dto == null || usuario == null) return;
+    // Atualiza os campos de um objeto Usuario com os dados de um UsuarioDTO (usado para update)
+    public static Usuario updateEntity(Usuario usuario, UsuarioDTO dto) {
 
-        // atualiza apenas os campos que não são nulos no DTO
-        if (dto.getNome() != null) usuario.setNome(dto.getNome());
-        if (dto.getDataNascimento() != null) usuario.setDataNascimento(dto.getDataNascimento());
-        if (dto.getSexo() != null) usuario.setSexo(dto.getSexo());
-        if (dto.getSenha() != null) usuario.setSenha(dto.getSenha());
-        // o email não é atualizado pois geralmente é usado como identificador
+        if (dto.getEmail() != null && !dto.getEmail().equals(usuario.getEmail())) {
+            throw new IllegalArgumentException("Não é permitido alterar o email");
+        }
+        if (dto.getNome() != null) {
+            usuario.setNome(dto.getNome());
+        }
+        if (dto.getDataNascimento() != null) {
+            usuario.setDataNascimento(dto.getDataNascimento());
+        }
+        if (dto.getSexo() != null) {
+            usuario.setSexo(dto.getSexo());
+        }
+        if (dto.getSenha() != null) {
+            usuario.setSenha(dto.getSenha());
+        }
+        if (dto.getAtivo() != null) {
+            usuario.setAtivo(dto.getAtivo());
+        }
+
+        return usuario;
     }
 }

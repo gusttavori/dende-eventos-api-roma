@@ -1,35 +1,65 @@
 package br.com.softhouse.dende.dto;
 
-import br.com.softhouse.dende.model.EnumModel.StatusIngresso;
+import br.com.softhouse.dende.model.enums.StatusIngresso;
 import java.time.LocalDateTime;
 
+/**
+ * Classe DTO unificada para enviar dados de um ingresso na API
+ */
 public class IngressoDTO {
-    private int id;
-    private String usuarioNome;
-    private String usuarioEmail;
+    private Long id;
+    private Long usuarioId;
+    private Long eventoId;
     private String eventoNome;
-    private int eventoId;
-    private StatusIngresso status;
-    private Double valorPago;
+    private LocalDateTime dataEvento;
+    private String local;
+    private String codigo;
     private LocalDateTime dataCompra;
-    private boolean eventoFuturo;
+    private String dataCompraFormatada;
+    private Double valorPago;
+    private StatusIngresso status;
+    private Boolean ingressoPrincipal;
+    private Long eventoVinculadoId;
 
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
-    public String getUsuarioNome() { return usuarioNome; }
-    public void setUsuarioNome(String usuarioNome) { this.usuarioNome = usuarioNome; }
-    public String getUsuarioEmail() { return usuarioEmail; }
-    public void setUsuarioEmail(String usuarioEmail) { this.usuarioEmail = usuarioEmail; }
+    public IngressoDTO() {}
+
+    // Getters e Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public Long getUsuarioId() { return usuarioId; }
+    public void setUsuarioId(Long usuarioId) { this.usuarioId = usuarioId; }
+
+    public Long getEventoId() { return eventoId; }
+    public void setEventoId(Long eventoId) { this.eventoId = eventoId; }
+
     public String getEventoNome() { return eventoNome; }
     public void setEventoNome(String eventoNome) { this.eventoNome = eventoNome; }
-    public int getEventoId() { return eventoId; }
-    public void setEventoId(int eventoId) { this.eventoId = eventoId; }
-    public StatusIngresso getStatus() { return status; }
-    public void setStatus(StatusIngresso status) { this.status = status; }
-    public Double getValorPago() { return valorPago; }
-    public void setValorPago(Double valorPago) { this.valorPago = valorPago; }
+
+    public LocalDateTime getDataEvento() { return dataEvento; }
+    public void setDataEvento(LocalDateTime dataEvento) { this.dataEvento = dataEvento; }
+
+    public String getLocal() { return local; }
+    public void setLocal(String local) { this.local = local; }
+
+    public String getCodigo() { return codigo; }
+    public void setCodigo(String codigo) { this.codigo = codigo; }
+
     public LocalDateTime getDataCompra() { return dataCompra; }
     public void setDataCompra(LocalDateTime dataCompra) { this.dataCompra = dataCompra; }
-    public boolean isEventoFuturo() { return eventoFuturo; }
-    public void setEventoFuturo(boolean eventoFuturo) { this.eventoFuturo = eventoFuturo; }
+
+    public String getDataCompraFormatada() { return dataCompraFormatada; }
+    public void setDataCompraFormatada(String dataCompraFormatada) { this.dataCompraFormatada = dataCompraFormatada; }
+
+    public Double getValorPago() { return valorPago; }
+    public void setValorPago(Double valorPago) { this.valorPago = valorPago; }
+
+    public StatusIngresso getStatus() { return status; }
+    public void setStatus(StatusIngresso status) { this.status = status; }
+
+    public Boolean getIngressoPrincipal() { return ingressoPrincipal; }
+    public void setIngressoPrincipal(Boolean ingressoPrincipal) { this.ingressoPrincipal = ingressoPrincipal; }
+
+    public Long getEventoVinculadoId() { return eventoVinculadoId; }
+    public void setEventoVinculadoId(Long eventoVinculadoId) { this.eventoVinculadoId = eventoVinculadoId; }
 }

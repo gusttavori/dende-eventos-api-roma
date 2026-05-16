@@ -1,40 +1,52 @@
 package br.com.softhouse.dende.mappers;
 
 import br.com.softhouse.dende.dto.IngressoDTO;
+import br.com.softhouse.dende.model.Evento;
 import br.com.softhouse.dende.model.Ingresso;
-import java.time.LocalDateTime;
 
-// Classe responsável por converter entre entidades Ingresso e DTOs (Data Transfer Objects)
+/**
+ * Mapper para converter entre as classes de modelo (entidade) e as classes de DTO (Data Transfer Object).
+ * Esta classe é responsável por transformar os dados entre as camadas de apresentação (DTOs) e a camada de negócio (entidades).
+ */
+
+// Mapper para converter entre Ingresso e IngressoDTO
 public class IngressoMapper {
 
-    // Converte uma entidade Ingresso para um IngressoDTO
-    public static IngressoDTO toDTO(Ingresso ingresso) {
-        // verifica se a entidade é nula e retorna nulo se for
+    private IngressoMapper() {}
+
+    // Converte um objeto Ingresso (entidade) para um IngressoDTO, incluindo informações do evento
+    public static IngressoDTO toDTO(Ingresso ingresso, Evento evento) {
         if (ingresso == null) return null;
 
-        // cria uma nova instância de IngressoDTO
+        // Criar um novo objeto IngressoDTO e preencher seus campos com os dados do ingresso e do evento
         IngressoDTO dto = new IngressoDTO();
-        // copia o ID do ingresso
         dto.setId(ingresso.getId());
-        // copia o nome do usuário comprador (acessando o objeto Usuario relacionado)
-        dto.setUsuarioNome(ingresso.getUsuario().getNome());
-        // copia o email do usuário comprador
-        dto.setUsuarioEmail(ingresso.getUsuario().getEmail());
-        // copia o nome do evento (acessando o objeto Evento relacionado)
-        dto.setEventoNome(ingresso.getEvento().getNome());
-        // copia o ID do evento
-        dto.setEventoId(ingresso.getEvento().getId());
-        // copia o status do ingresso (ATIVO, CANCELADO, UTILIZADO, etc)
-        dto.setStatus(ingresso.getStatusIngresso());
-        // copia o valor pago pelo ingresso
-        dto.setValorPago(ingresso.getValorPago());
-        // copia a data e hora da compra
+        dto.setUsuarioId(ingresso.getUsuarioId());
+        dto.setEventoId(ingresso.getEventoId());
+        dto.setEventoNome(evento != null ? evento.getNome() : null);
+        dto.setDataEvento(evento != null ? evento.getDataInicio() : null);
+        dto.setLocal(evento != null ? evento.getLocal() : null);
+        dto.setCodigo(ingresso.getCodigo());
         dto.setDataCompra(ingresso.getDataCompra());
-        // verifica se a data de início do evento é posterior ao momento atual
-        // define true se o evento ainda não aconteceu, false se já passou
-        dto.setEventoFuturo(ingresso.getEvento().getDataInicio().isAfter(LocalDateTime.now()));
+        dto.setDataCompraFormatada(ingresso.getDataCompraFormatada());
+        dto.setValorPago(ingresso.getValorPago());
+        dto.setStatus(ingresso.getStatus());
+        dto.setIngressoPrincipal(ingresso.getIngressoPrincipal());
+        dto.setEventoVinculadoId(ingresso.getEventoVinculadoId());
 
-        // retorna o DTO criado com todos os dados preenchidos
         return dto;
+    }
+
+    // Converte um IngressoDTO para um objeto Ingresso (entidade), preenchendo apenas os campos básicos
+    public static Ingresso createIngresso(Long usuarioId, Long eventoId, Double valorPago) {
+        return new Ingresso(usuarioId, eventoId, valorPago);
+    }
+
+    // Cria um ingresso vinculado a outro evento, marcando-o como ingresso secundário
+    public static Ingresso createIngressoVinculado(Long usuarioId, Long eventoId, Long eventoVinculadoId, Double valorPago) {
+        Ingresso ingresso = new Ingresso(usuarioId, eventoId, valorPago);
+        ingresso.setEventoVinculadoId(eventoVinculadoId);
+        ingresso.setIngressoPrincipal(false);
+        return ingresso;
     }
 }

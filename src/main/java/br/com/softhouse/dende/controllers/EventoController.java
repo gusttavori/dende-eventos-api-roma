@@ -3,125 +3,168 @@ package br.com.softhouse.dende.controllers;
 import br.com.dende.softhouse.annotations.Controller;
 import br.com.dende.softhouse.annotations.request.*;
 import br.com.dende.softhouse.process.route.ResponseEntity;
+import br.com.softhouse.dende.dto.ApiResponse;
 import br.com.softhouse.dende.dto.EventoDTO;
-import br.com.softhouse.dende.dto.request.EventoRequestDTO;
-import br.com.softhouse.dende.mappers.EventoMapper;
-import br.com.softhouse.dende.model.Evento;
-import br.com.softhouse.dende.model.Organizador;
-import br.com.softhouse.dende.service.EventoService;
-import br.com.softhouse.dende.service.OrganizadorService;
+import br.com.softhouse.dende.dto.EventoResumoDTO;
+import br.com.softhouse.dende.exceptions.EntidadeNaoEncontradaException;
+import br.com.softhouse.dende.exceptions.RegraDeNegocioException;
+import br.com.softhouse.dende.repositories.EventoRepository;
+import br.com.softhouse.dende.repositories.IngressoRepository;
+import br.com.softhouse.dende.repositories.OrganizadorRepository;
+import br.com.softhouse.dende.repositories.util.ConfigProperties;
+import br.com.softhouse.dende.repositories.util.ConnectionPool;
+import br.com.softhouse.dende.services.EventoService;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
-// indica que esta classe é um controller (componente que recebe requisições HTTP)
 @Controller
-// define o caminho base para todas as rotas deste controller (vazio = raiz)
-@RequestMapping
+@RequestMapping(path = "")
 public class EventoController {
 
-    // cria instâncias dos serviços necessários para operações com eventos e organizadores
-    private final EventoService eventoService = new EventoService();
-    private final OrganizadorService organizadorService = new OrganizadorService();
+    private final EventoService eventoService;
 
-    // mapeia requisições POST para o caminho "/organizadores/{email}/eventos"
-    @PostMapping(path = "/organizadores/{email}/eventos")
-    public ResponseEntity<EventoDTO> cadastrar(
-            // extrai o valor da variável "email" do caminho da URL
-            @PathVariable(parameter = "email") String email,
-            // extrai o corpo da requisição e converte para EventoRequestDTO
-            @RequestBody EventoRequestDTO request
-    ) {
+    // Construtor padrão - usado pelo framework
+    public EventoController() {
+        // Instancia as dependências manualmente
+        ConfigProperties config = new ConfigProperties();
+        ConnectionPool connectionPool = new ConnectionPool(config);
+        EventoRepository eventoRepository = new EventoRepository(connectionPool);
+        OrganizadorRepository organizadorRepository = new OrganizadorRepository(connectionPool);
+        IngressoRepository ingressoRepository = new IngressoRepository(connectionPool);
+        this.eventoService = new EventoService(eventoRepository, organizadorRepository, ingressoRepository);
+    }
+
+    // Construtor para injeção de dependência (opcional)
+    public EventoController(EventoService eventoService) {
+        this.eventoService = eventoService;
+    }
+
+    @PostMapping(path = "/organizadores/{organizadorId}/eventos")
+    public ResponseEntity<ApiResponse<EventoDTO>> cadastrar(
+            @PathVariable(parameter = "organizadorId") Long organizadorId,
+            @RequestBody EventoDTO dto) {
         try {
-            // busca o organizador pelo email para verificar se existe
-            Organizador organizador = organizadorService.buscarPorEmail(email);
-            // chama o serviço para cadastrar um novo evento
-            Evento novoEvento = eventoService.cadastrarEvento(email, request, organizador);
-            // retorna status 201 (Created) com o DTO do evento criado
-            return ResponseEntity.status(201, EventoMapper.toDTO(novoEvento));
-        } catch (IllegalArgumentException e) {
-            // captura exceção de organizador não encontrado ou dados inválidos
-            // retorna status 400 (Bad Request) com corpo vazio
-            return ResponseEntity.status(400, null);
+            EventoDTO response = eventoService.cadastrar(organizadorId, dto);
+            ApiResponse<EventoDTO> apiResponse = new ApiResponse<>(
+                    response, "Evento cadastrado com sucesso", 201
+            );
+            return ResponseEntity.status(201, apiResponse);
+        } catch (RegraDeNegocioException e) {
+            ApiResponse<EventoDTO> apiResponse = new ApiResponse<>(
+                    e.getMessage(), 400, "Bad Request"
+            );
+            return ResponseEntity.status(400, apiResponse);
+        } catch (EntidadeNaoEncontradaException e) {
+            ApiResponse<EventoDTO> apiResponse = new ApiResponse<>(
+                    e.getMessage(), 404, "Not Found"
+            );
+            return ResponseEntity.status(404, apiResponse);
+        } catch (Exception e) {
+            ApiResponse<EventoDTO> apiResponse = new ApiResponse<>(
+                    "Erro interno: " + e.getMessage(), 500, "Internal Server Error"
+            );
+            return ResponseEntity.status(500, apiResponse);
         }
     }
 
-    // mapeia requisições PUT para o caminho "/organizadores/{email}/eventos/{id}"
-    @PutMapping(path = "/organizadores/{email}/eventos/{id}")
-    public ResponseEntity<EventoDTO> alterar(
-            // extrai o valor da variável "email" do caminho da URL
-            @PathVariable(parameter = "email") String email,
-            // extrai o valor da variável "id" do caminho da URL
-            @PathVariable(parameter = "id") int id,
-            // extrai o corpo da requisição com os dados atualizados
-            @RequestBody EventoRequestDTO request
-    ) {
+    @PutMapping(path = "/organizadores/{organizadorId}/eventos/{eventoId}")
+    public ResponseEntity<ApiResponse<EventoDTO>> alterar(
+            @PathVariable(parameter = "organizadorId") Long organizadorId,
+            @PathVariable(parameter = "eventoId") Long eventoId,
+            @RequestBody EventoDTO dto) {
         try {
-            // chama o serviço para alterar o evento
-            Evento eventoAtualizado = eventoService.alterarEvento(email, id, request);
-            // retorna status 200 (OK) com o DTO do evento alterado
-            return ResponseEntity.ok(EventoMapper.toDTO(eventoAtualizado));
-        } catch (IllegalArgumentException e) {
-            // captura exceções de:
-            // - organizador não encontrado
-            // - evento não encontrado
-            // - evento não pertence ao organizador
-            // - evento inativo
-            // retorna status 404 (Not Found) com corpo vazio
-            return ResponseEntity.status(404, null);
+            EventoDTO response = eventoService.atualizar(organizadorId, eventoId, dto);
+            ApiResponse<EventoDTO> apiResponse = new ApiResponse<>(
+                    response, "Evento atualizado com sucesso", 200
+            );
+            return ResponseEntity.ok(apiResponse);
+        } catch (RegraDeNegocioException e) {
+            ApiResponse<EventoDTO> apiResponse = new ApiResponse<>(
+                    e.getMessage(), 400, "Bad Request"
+            );
+            return ResponseEntity.status(400, apiResponse);
+        } catch (EntidadeNaoEncontradaException e) {
+            ApiResponse<EventoDTO> apiResponse = new ApiResponse<>(
+                    e.getMessage(), 404, "Not Found"
+            );
+            return ResponseEntity.status(404, apiResponse);
+        } catch (Exception e) {
+            ApiResponse<EventoDTO> apiResponse = new ApiResponse<>(
+                    "Erro interno: " + e.getMessage(), 500, "Internal Server Error"
+            );
+            return ResponseEntity.status(500, apiResponse);
         }
     }
 
-    // mapeia requisições PATCH para o caminho "/organizadores/{email}/eventos/{id}/{status}"
-    @PatchMapping(path = "/organizadores/{email}/eventos/{id}/{status}")
-    public ResponseEntity<String> alterarStatus(
-            // extrai o valor da variável "email" do caminho da URL
-            @PathVariable(parameter = "email") String email,
-            // extrai o valor da variável "id" do caminho da URL
-            @PathVariable(parameter = "id") int id,
-            // extrai o valor da variável "status" do caminho da URL (ativar/desativar)
-            @PathVariable(parameter = "status") String status
-    ) {
+    @PatchMapping(path = "/organizadores/{organizadorId}/eventos/{eventoId}/{status}")
+    public ResponseEntity<ApiResponse<EventoDTO>> alterarStatusEvento(
+            @PathVariable(parameter = "organizadorId") Long organizadorId,
+            @PathVariable(parameter = "eventoId") Long eventoId,
+            @PathVariable(parameter = "status") boolean ativar) {
         try {
-            // chama o serviço para alterar o status do evento
-            eventoService.alterarStatusEvento(id, status);
-            // retorna status 200 (OK) com mensagem de sucesso
-            return ResponseEntity.ok("Status alterado com sucesso");
-        } catch (IllegalArgumentException e) {
-            // captura exceções de evento não encontrado ou status inválido
-            // retorna status 400 (Bad Request) com a mensagem de erro
-            return ResponseEntity.status(400, e.getMessage());
+            EventoDTO response;
+            String operacao;
+
+            if (ativar) {
+                response = eventoService.ativar(organizadorId, eventoId);
+                operacao = "ativado";
+            } else {
+                response = eventoService.desativar(organizadorId, eventoId);
+                operacao = "desativado";
+            }
+
+            ApiResponse<EventoDTO> apiResponse = new ApiResponse<>(
+                    response, "Evento " + operacao + " com sucesso", 200
+            );
+            return ResponseEntity.ok(apiResponse);
+        } catch (RegraDeNegocioException e) {
+            ApiResponse<EventoDTO> apiResponse = new ApiResponse<>(
+                    e.getMessage(), 400, "Bad Request"
+            );
+            return ResponseEntity.status(400, apiResponse);
+        } catch (EntidadeNaoEncontradaException e) {
+            ApiResponse<EventoDTO> apiResponse = new ApiResponse<>(
+                    e.getMessage(), 404, "Not Found"
+            );
+            return ResponseEntity.status(404, apiResponse);
+        } catch (Exception e) {
+            ApiResponse<EventoDTO> apiResponse = new ApiResponse<>(
+                    "Erro interno: " + e.getMessage(), 500, "Internal Server Error"
+            );
+            return ResponseEntity.status(500, apiResponse);
         }
     }
 
-    // mapeia requisições GET para o caminho "/eventos/feed"
-    @GetMapping(path = "/eventos/feed")
-    public ResponseEntity<List<EventoDTO>> feed() {
-        // obtém todos os eventos ativos do serviço
-        List<EventoDTO> eventos = eventoService.listarEventosAtivos().stream()
-                .map(EventoMapper::toDTO) // converte cada evento para DTO
-                .collect(Collectors.toList()); // coleta os DTOs em uma lista
-        // retorna status 200 (OK) com a lista de eventos ativos
-        return ResponseEntity.ok(eventos);
+    @GetMapping(path = "/organizadores/{organizadorId}/eventos")
+    public ResponseEntity<ApiResponse<List<EventoResumoDTO>>> listarDoOrganizador(
+            @PathVariable(parameter = "organizadorId") Long organizadorId) {
+        try {
+            List<EventoResumoDTO> resumos = eventoService.listarPorOrganizador(organizadorId);
+            ApiResponse<List<EventoResumoDTO>> apiResponse = new ApiResponse<>(
+                    resumos, "Eventos listados com sucesso", 200
+            );
+            return ResponseEntity.ok(apiResponse);
+        } catch (Exception e) {
+            ApiResponse<List<EventoResumoDTO>> apiResponse = new ApiResponse<>(
+                    "Erro ao listar eventos: " + e.getMessage(), 400, "Bad Request"
+            );
+            return ResponseEntity.status(400, apiResponse);
+        }
     }
 
-    // mapeia requisições GET para o caminho "/organizadores/{email}/eventos"
-    @GetMapping(path = "/organizadores/{email}/eventos")
-    public ResponseEntity<List<EventoDTO>> listarPorOrganizador(
-            // extrai o valor da variável "email" do caminho da URL
-            @PathVariable(parameter = "email") String email
-    ) {
+    @GetMapping(path = "/eventos")
+    public ResponseEntity<ApiResponse<List<EventoDTO>>> feed() {
         try {
-            // obtém os eventos de um organizador específico
-            List<EventoDTO> eventos = eventoService.listarEventosPorOrganizador(email).stream()
-                    .map(EventoMapper::toDTO) // converte cada evento para DTO
-                    .collect(Collectors.toList()); // coleta os DTOs em uma lista
-            // retorna status 200 (OK) com a lista de eventos do organizador
-            return ResponseEntity.ok(eventos);
-        } catch (IllegalArgumentException e) {
-            // captura exceção de organizador não encontrado
-            // retorna status 404 (Not Found) com corpo vazio
-            return ResponseEntity.status(404, null);
+            List<EventoDTO> response = eventoService.feedAtivos();
+            ApiResponse<List<EventoDTO>> apiResponse = new ApiResponse<>(
+                    response, "Feed de eventos carregado", 200
+            );
+            return ResponseEntity.ok(apiResponse);
+        } catch (Exception e) {
+            ApiResponse<List<EventoDTO>> apiResponse = new ApiResponse<>(
+                    "Erro ao carregar feed: " + e.getMessage(), 400, "Bad Request"
+            );
+            return ResponseEntity.status(400, apiResponse);
         }
     }
 }
