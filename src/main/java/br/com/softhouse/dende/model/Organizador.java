@@ -9,6 +9,9 @@ public class Organizador extends Usuario {
 
     private Empresa empresa;
 
+    // [ITEM — Relacionamento] A lista de eventos dentro do Organizador representa um relacionamento
+    // de composição correto em OO. Porém, manter essa lista sincronizada manualmente com o repositório
+    // (via cadastrarEvento) é frágil. O ideal seria que o repositório fosse a única fonte de verdade.
     @JsonIgnore
     private List<Evento> eventos = new ArrayList<>();
 
@@ -32,6 +35,10 @@ public class Organizador extends Usuario {
         return eventos;
     }
 
+    // [ITEM 1] O método cadastrarEvento() tem um nome adequado, porém ele apenas adiciona à lista local
+    // do organizador. Isso é uma duplicação de estado — o evento já é persistido no Repositorio.
+    // Sugestão: avalie se essa lista local é realmente necessária, ou se os eventos devem ser
+    // sempre consultados diretamente no repositório para evitar inconsistências.
     public void cadastrarEvento(Evento evento) {
         this.eventos.add(evento);
     }

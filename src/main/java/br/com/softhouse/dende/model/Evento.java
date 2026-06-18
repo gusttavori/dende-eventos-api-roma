@@ -17,7 +17,12 @@ public class Evento {
     private LocalDateTime dataFim;
     private TipoEvento tipoEvento;
     private ModalidadeEvento modalidade;
+    // [ITEM 14] precoUnitarioIngresso é um valor financeiro e deveria ser BigDecimal em vez de Double.
+    // Double pode causar erros de arredondamento em operações financeiras.
+    // Sugestão: private BigDecimal precoUnitarioIngresso;
     private Double precoUnitarioIngresso;
+    // [ITEM 14] taxaCancelamentoIngresso é um valor financeiro/percentual e também deveria ser BigDecimal.
+    // Sugestão: private BigDecimal taxaCancelamentoIngresso;
     private Double taxaCancelamentoIngresso;
     private int capacidadeMaxima;
     private String local;
@@ -182,6 +187,17 @@ public class Evento {
     // REGRAS DE NEGÓCIO
 
     // Valida as regras de negócio para criação/alteração de evento
+    // [ITEM 6] O método validarEvento() contém lógica de validação de regras de negócio
+    // diretamente no modelo. Essa responsabilidade poderia estar no EventoService,
+    // que é a camada adequada para orquestrar as regras de negócio.
+    // Deixar no modelo é aceitável para um projeto simples, mas em sistemas maiores
+    // separe as validações no service.
+    // [ITEM 7] Este método é chamado tanto no cadastro quanto na alteração de eventos.
+    // Ao alterar um evento existente cujas datas já foram definidas anteriormente,
+    // a validação "dataInicio.isBefore(agora)" pode lançar exceção mesmo para
+    // eventos legítimos que não tiveram suas datas modificadas — ferindo a idempotência
+    // da operação de alteração. Considere distinguir os dois casos ou aceitar datas
+    // inalteradas como válidas.
     public void validarEvento() {
         // Obtém a data e hora atual para comparações
         LocalDateTime agora = LocalDateTime.now();
@@ -227,6 +243,12 @@ public class Evento {
         LocalDateTime agora = LocalDateTime.now();
         return agora.isAfter(dataInicio) && agora.isBefore(dataFim);// Retorna verdadeiro se a data atual estiver entre o início e o fim do evento
     }
+
+    // [ITEM — Capacidade] Não há atributo para controlar quantos ingressos já foram vendidos
+    // (ingressosVendidos ou vagasDisponiveis). A US12 exige que eventos com ingressos esgotados
+    // não apareçam no feed. Atualmente essa contagem é feita externamente via repositório,
+    // o que é correto, mas o modelo poderia ter um método utilitário que receba a contagem.
+    // Sugestão: public boolean temVagasDisponiveis(int ingressosVendidos) { return ingressosVendidos < capacidadeMaxima; }
 
     @Override
     public boolean equals(Object o) {

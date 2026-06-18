@@ -10,6 +10,9 @@ public class Ingresso {
     private Usuario usuario;
     private Evento evento;
     private StatusIngresso statusIngresso;
+    // [ITEM 14] valorPago é um valor financeiro e deveria ser BigDecimal em vez de Double.
+    // Double pode causar erros de arredondamento em cálculos monetários.
+    // Sugestão: private BigDecimal valorPago;
     private Double valorPago;
     private LocalDateTime dataCompra;
 
@@ -76,6 +79,17 @@ public class Ingresso {
     // REGRAS DE NEGÓCIO
 
     // Cancela o ingresso - O ingresso só pode ser cancelado se estiver ATIVO
+    // [ITEM 6] O método cancelar() calcula o valor de estorno dentro do modelo (Ingresso).
+    // O cálculo financeiro (valorPago * taxa) é uma regra de negócio que deveria estar no
+    // IngressoService, deixando o modelo apenas com a responsabilidade de mudar seu próprio estado.
+    // Sugestão: mova o cálculo do estorno para IngressoService.cancelarIngresso() e
+    // deixe aqui apenas: this.statusIngresso = StatusIngresso.CANCELADO;
+    // [ITEM 7] O método cancelar() lança IllegalStateException quando o ingresso já está cancelado.
+    // Isso fere a idempotência: chamar cancelar() duas vezes no mesmo ingresso deveria ser seguro.
+    // Sugestão: em vez de lançar exceção, simplesmente retorne 0.0 se já estiver cancelado.
+    // [ITEM 14] A variável local "taxa" e "valorEstorno" usam double — altere para BigDecimal
+    // quando o tipo do atributo valorPago for corrigido.
+    // [ITEM 1] O System.out.println de debug não deve existir em código de produção.
     public Double cancelar() {
         // Verifica se o ingresso já está cancelado
         if (this.statusIngresso == StatusIngresso.CANCELADO) {
@@ -94,6 +108,10 @@ public class Ingresso {
     }
 
     // Verifica se o ingresso é de um evento futuro usado para ordenação
+    // [ITEM 1] O nome eventoAindaNaoOcorreu() é razoável, mas poderia ser mais expressivo.
+    // Sugestão: renomeie para isFuturo() ou eventoEhFuturo(), seguindo a convenção de prefixo "is"
+    // para métodos booleanos em Java.
+    // A nova assinatura ficaria: public boolean isFuturo()
     public boolean eventoAindaNaoOcorreu() {
         // Compara a data de início do evento com a data e hora atual
         // Retorna verdadeiro se o evento ainda não começou

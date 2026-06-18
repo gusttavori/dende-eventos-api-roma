@@ -12,78 +12,92 @@ import java.util.List;
 @RequestMapping
 public class EventoController {
 
-    // Cria uma instância do service
     private final EventoService service = new EventoService();
 
     @PostMapping(path = "/organizadores/{email}/eventos")
-    // Metodo que recebe o email do organizador como parâmetro de path e os dados do evento no corpo
+    // [ITEM 9] Retornar 201 (Created) para evento cadastrado está correto.
+    // Para erros de validação (datas inválidas, duração < 30min), retorna 400 (Bad Request) — correto.
+    // Para organizador não encontrado, 400 seria incorreto — deveria ser 404 (Not Found).
+    // Sugestão: diferencie os erros, retornando 404 quando o organizador não existir.
+    // [ITEM 4] O objeto Evento recebido é a entidade completa. Considere criar um DTO de entrada
+    // (CadastrarEventoRequest) sem campos gerados automaticamente como id, organizador e ativo.
+    // [ITEM 4] O Evento retornado inclui o objeto Organizador completo (com senha).
+    // Crie um DTO de saída (EventoResponse) que omita dados sensíveis do organizador.
+    // [ITEM 5] Um Mapper (ex: EventoMapper) seria uma boa prática aqui. Não obrigatório nesta avaliação.
     public ResponseEntity<Evento> cadastrar(
             @PathVariable(parameter = "email") String email,
             @RequestBody Evento evento
     ) {
         try {
-            // Chama o service para cadastrar o evento
             Evento novoEvento = service.cadastrarEvento(email, evento);
-            // Retorna status 201 com o evento criado
             return ResponseEntity.status(201, novoEvento);
         } catch (IllegalArgumentException e) {
-            // Se houver erro (organizador não encontrado, dados inválidos), retorna status 400
             return ResponseEntity.status(400, null);
         }
     }
 
     @PutMapping(path = "/organizadores/{email}/eventos/{id}")
-    // Metodo que recebe o email do organizador e o ID do evento como parâmetros de path, e os dados atualizados no corpo
+    // [ITEM 9] Para evento ou organizador não encontrado, retorna 404 — correto.
+    // Porém, para "evento inativo não pode ser alterado" (regra de negócio), 404 é inadequado.
+    // Deveria ser 422 (Unprocessable Entity) ou 400 (Bad Request) para violação de regra de negócio.
+    // [ITEM — US8] A verificação de que o evento é ativo antes de alterar está implementada
+    // no service, o que está correto para a US8.
     public ResponseEntity<Evento> alterar(
             @PathVariable(parameter = "email") String email,
             @PathVariable(parameter = "id") int id,
             @RequestBody Evento evento
     ) {
         try {
-            // Chama o service para alterar o evento
             Evento eventoAtualizado = service.alterarEvento(email, id, evento);
-            // Retorna o evento atualizado com status 200
             return ResponseEntity.ok(eventoAtualizado);
         } catch (IllegalArgumentException e) {
-            // Se não encontrar o evento ou organizador, retorna status 404
             return ResponseEntity.status(404, null);
         }
     }
 
     @PatchMapping(path = "/organizadores/{organizadorId}/eventos/{status}")
-    // Recebe o ID do organizador e o status como parâmetros de path
+    // [ITEM — Mapeamento] ATENÇÃO: O path desta rota está INCORRETO para ativar/desativar
+    // um único evento. O path "/organizadores/{organizadorId}/eventos/{status}" mistura
+    // o ID do organizador com o status como parâmetros, mas não há um ID de evento específico.
+    // Para ativar/desativar um evento específico, o path deveria ser:
+    // "/organizadores/{email}/eventos/{eventoId}/status" ou "/eventos/{eventoId}/ativar"
+    // [ITEM 9] Para erros, retorna 400 — mas "organizador não encontrado" deveria ser 404.
+    // [ITEM — US9/US10] As US9 e US10 exigem ativar/desativar um evento específico.
+    // Este endpoint opera sobre TODOS os eventos de um organizador em lote, o que não
+    // corresponde diretamente ao mapeado nas User Stories.
     public ResponseEntity<String> alterarStatusPorOrganizador(
             @PathVariable(parameter = "organizadorId") int organizadorId,
             @PathVariable(parameter = "status") String status
     ) {
         try {
-            // Chama o service para alterar o status de todos os eventos do organizador
             service.alterarStatusEventoPorOrganizador(organizadorId, status);
-            // Retorna mensagem de sucesso
             return ResponseEntity.ok("Status alterado com sucesso");
         } catch (IllegalArgumentException e) {
-            // Se houver erro, retorna status 400 com a mensagem
             return ResponseEntity.status(400, e.getMessage());
         }
     }
 
     @GetMapping(path = "/eventos/feed")
-    // Retorna a lista de eventos ativos
+    // [ITEM — US12] O feed retorna eventos ativos e não finalizados. Correto parcialmente.
+    // Falta: 1) Filtrar eventos com vagas disponíveis. 2) Ordenar por data de início e nome.
+    // Sugestão: adicione no service a ordenação e a filtragem de vagas antes de retornar.
     public ResponseEntity<List<Evento>> feed() {
-        // Chama o service para listar eventos ativos e retorna com status 200
         return ResponseEntity.ok(service.listarEventosAtivos());
     }
 
     @GetMapping(path = "/organizadores/{email}/eventos")
-    // Recebe o email do organizador como parâmetro de path
+    // [ITEM — US11] Lista eventos de um organizador específico — correto para a US11.
+    // Porém, falta a ordenação por data de execução e ordem alfabética de nome,
+    // conforme exige a US11.
+    // [ITEM 4] O Evento retornado inclui o Organizador completo (com senha).
+    // Crie um DTO de saída (EventoResumoResponse) com apenas: nome, período, local,
+    // preço e capacidade máxima, conforme exige a US11.
     public ResponseEntity<List<Evento>> listarPorOrganizador(
             @PathVariable(parameter = "email") String email
     ) {
         try {
-            // Chama o service para listar eventos do organizador
             return ResponseEntity.ok(service.listarEventosPorOrganizador(email));
         } catch (IllegalArgumentException e) {
-            // Se o organizador não for encontrado, retorna status 404
             return ResponseEntity.status(404, null);
         }
     }
